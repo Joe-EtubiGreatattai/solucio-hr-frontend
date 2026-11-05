@@ -1,0 +1,165 @@
+@import "tailwindcss";
+
+/* `desk:` = a wide screen with a precise pointer (mouse/trackpad). Compact control sizes only
+   apply there; phones and tablets (touch) keep 40px+ targets and 16px inputs. */
+@custom-variant desk (@media (min-width: 40rem) and (pointer: fine));
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --color-brand-50: #effcf9;
+  --color-brand-100: #c9f5ec;
+  --color-brand-200: #94e9da;
+  --color-brand-300: #57d5c3;
+  --color-brand-400: #29b9a8;
+  --color-brand-500: #129d8f;
+  --color-brand-600: #0c7e75;
+  --color-brand-700: #0f766e;
+  --color-brand-800: #105550;
+  --color-brand-900: #0b3b38;
+
+  /* Motion system: one easing, short durations. Use as `animate-fade-up`, `animate-scale-in`, …
+     Entrances use `backwards` fill so no transform lingers afterwards (a lingering transform would
+     trap position:fixed descendants). Exits use `both` so the element stays hidden until unmounted. */
+  --ease-out-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-fade-in: fade-in 0.25s var(--ease-out-soft) backwards;
+  --animate-fade-out: fade-out 0.16s ease-in both;
+  --animate-fade-up: fade-up 0.4s var(--ease-out-soft) backwards;
+  --animate-scale-in: scale-in 0.2s var(--ease-out-soft) backwards;
+  --animate-scale-out: scale-out 0.15s ease-in both;
+  --animate-pop-in: pop-in 0.35s cubic-bezier(0.3, 1.5, 0.5, 1) backwards;
+  --animate-slide-down: slide-down 0.25s var(--ease-out-soft) backwards;
+  --animate-slide-in-left: slide-in-left 0.28s var(--ease-out-soft) backwards;
+  --animate-slide-out-left: slide-out-left 0.2s ease-in both;
+  --animate-grow-x: grow-x 0.8s var(--ease-out-soft) backwards;
+  --animate-grow-y: grow-y 0.7s var(--ease-out-soft) backwards;
+  --animate-shake: shake 0.4s ease-in-out both;
+  --animate-wiggle: wiggle 0.6s ease-in-out both;
+  --animate-flash: flash 1.6s ease-out both;
+  --animate-draw: draw 0.5s 0.15s var(--ease-out-soft) backwards;
+  --animate-pulse-ring: pulse-ring 1.8s ease-out infinite;
+
+  @keyframes fade-in { from { opacity: 0; } }
+  @keyframes fade-out { to { opacity: 0; } }
+  @keyframes fade-up { from { opacity: 0; transform: translateY(10px); } }
+  @keyframes scale-in { from { opacity: 0; transform: scale(0.96) translateY(-4px); } }
+  @keyframes scale-out { to { opacity: 0; transform: scale(0.97) translateY(-4px); } }
+  @keyframes pop-in { from { opacity: 0; transform: scale(0.4); } }
+  @keyframes slide-down { from { opacity: 0; transform: translateY(-8px); } }
+  @keyframes slide-in-left { from { transform: translateX(-100%); } }
+  @keyframes slide-out-left { to { transform: translateX(-100%); } }
+  @keyframes grow-x { from { transform: scaleX(0); } }
+  @keyframes grow-y { from { transform: scaleY(0); } }
+  @keyframes shake { 20%, 60% { transform: translateX(-5px); } 40%, 80% { transform: translateX(5px); } }
+  @keyframes wiggle { 20% { transform: rotate(14deg); } 40% { transform: rotate(-12deg); } 60% { transform: rotate(8deg); } 80% { transform: rotate(-4deg); } }
+  @keyframes flash { from { background-color: var(--color-brand-100); } }
+  @keyframes draw { from { stroke-dashoffset: 30; } to { stroke-dashoffset: 0; } }
+  @keyframes sheet-up { from { transform: translateY(100%); } }
+  @keyframes sheet-down { to { transform: translateY(100%); } }
+  @keyframes pulse-ring { 0% { transform: scale(1); opacity: 0.55; } 100% { transform: scale(1.6); opacity: 0; } }
+}
+
+/* Children of .stagger enter one after another. */
+.stagger > * { animation: var(--animate-fade-up); }
+.stagger > *:nth-child(2) { animation-delay: 50ms; }
+.stagger > *:nth-child(3) { animation-delay: 100ms; }
+.stagger > *:nth-child(4) { animation-delay: 150ms; }
+.stagger > *:nth-child(5) { animation-delay: 200ms; }
+.stagger > *:nth-child(6) { animation-delay: 250ms; }
+.stagger > *:nth-child(7) { animation-delay: 300ms; }
+.stagger > *:nth-child(n + 8) { animation-delay: 350ms; }
+
+/* Respect the system "reduce motion" setting everywhere. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+body {
+  @apply bg-slate-50 text-slate-800 antialiased;
+}
+
+/* Keep keyboard focus visible across links, buttons, custom controls, and form fields. */
+:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-brand-600) 70%, white);
+  outline-offset: 2px;
+}
+
+/* Component classes live in the components layer so Tailwind utilities (w-48, pl-9, …) can override them. */
+@layer components {
+  /* 16px text on phones stops iOS zooming into a field when it's tapped. */
+  .input {
+    @apply w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-base outline-none transition desk:text-sm
+      focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 disabled:bg-slate-100;
+  }
+  .label {
+    @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500;
+  }
+  .card {
+    @apply rounded-2xl border border-slate-200/70 bg-white shadow-sm;
+  }
+  /* Hover lift for clickable cards */
+  .lift {
+    @apply transition duration-200 hover:-translate-y-0.5 hover:shadow-md;
+  }
+}
+
+/* Diagonal stripes for "not yet / pending" bars, as in the dashboard references. */
+.hatched {
+  background-image: repeating-linear-gradient(135deg, var(--color-slate-300) 0 3px, transparent 3px 9px);
+  background-color: var(--color-white);
+  box-shadow: inset 0 0 0 1px var(--color-slate-300);
+}
+
+@layer components {
+  .table {
+    @apply w-full text-left text-sm;
+  }
+  .table th {
+    @apply border-b border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-slate-500;
+  }
+  .table td {
+    @apply border-b border-slate-100 px-4 py-3 align-middle;
+  }
+  .table tbody tr {
+    @apply transition-colors;
+    animation: var(--animate-fade-in);
+  }
+  .table tbody tr:hover {
+    @apply bg-slate-50/70;
+  }
+
+  /* Phones and tablets: each table row becomes a card; cells show their column name on the left. */
+  @media (max-width: 1023px) {
+    .table thead { @apply sr-only; }
+    .table { @apply block p-3; }
+    .table tbody { @apply block; }
+    .table tbody tr { @apply mb-3 block rounded-2xl border border-slate-200 bg-white px-4 py-2 shadow-sm; }
+    .table tbody tr:hover { @apply bg-white; }
+    .table td {
+      @apply flex min-h-10 items-center justify-between gap-4 border-b border-slate-100 px-0 py-2 text-right;
+    }
+    .table td:last-child { @apply border-b-0; }
+    .table td::before {
+      content: attr(data-label);
+      @apply shrink-0 text-left text-xs font-semibold uppercase tracking-wide text-slate-500;
+    }
+    /* First column (usually the person or item) leads the card, without a label. */
+    .table td:first-child { @apply justify-start text-left; }
+    .table td:first-child::before, .table td[data-label=""]::before { content: none; }
+    /* Unlabelled action cells line their buttons up on the right. */
+    .table td[data-label=""] { @apply justify-end; }
+    /* Column widths meant for desktop would squash a card row. */
+    .table td { width: auto !important; max-width: none !important; }
+    .table td > .flex { @apply min-w-0; }
+  }
+  /* Tablets: two cards per row. */
+  @media (min-width: 640px) and (max-width: 1023px) {
+    .table tbody { @apply grid grid-cols-2 gap-3; }
+    .table tbody tr { @apply mb-0; }
+  }
+}

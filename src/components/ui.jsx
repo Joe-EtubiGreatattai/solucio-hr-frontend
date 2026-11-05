@@ -273,7 +273,9 @@ export function StatCard({ label, value, icon: Icon, tone = 'brand', hint, onCli
 export function Avatar({ user, size = 'md' }) {
   const sizes = { sm: 'h-8 w-8 text-xs', md: 'h-10 w-10 text-sm', lg: 'h-16 w-16 text-xl', xl: 'h-24 w-24 text-3xl' };
   const initials = `${user?.firstName?.[0] || ''}${user?.lastName?.[0] || ''}`.toUpperCase();
-  if (user?.avatar) return <img src={user.avatar} alt="" className={`${sizes[size]} shrink-0 rounded-full object-cover ring-2 ring-white`} />;
+  // Photos are stored as server paths (/uploads/...); in production the API is on another domain.
+  const src = user?.avatar?.startsWith('/uploads') ? `${import.meta.env.VITE_API_ORIGIN || ''}${user.avatar}` : user?.avatar;
+  if (src) return <img src={src} alt="" className={`${sizes[size]} shrink-0 rounded-full object-cover ring-2 ring-white`} />;
   return (
     <div className={`${sizes[size]} flex shrink-0 items-center justify-center rounded-full bg-brand-100 font-bold text-brand-700 ring-2 ring-white`}>
       {initials || '?'}

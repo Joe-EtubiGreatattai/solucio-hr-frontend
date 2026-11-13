@@ -17,8 +17,10 @@ const blank = {
   firstName: '', lastName: '', email: '', password: '', access: 'staff', department: '', jobTitle: '',
   employmentType: 'full_time', phone: '', dateJoined: ymd(), status: 'active', leaveBalance: 21,
   position: '', grade: '', manager: '', probationEndDate: '', contractEndDate: '', plannedExitDate: '',
-  payrollAccess: false,
+  payrollAccess: false, emrRoles: [],
 };
+
+const EMR_ROLES = [['reception', 'Reception'], ['nurse', 'Nurse'], ['doctor', 'Doctor'], ['lab', 'Lab'], ['pharmacy', 'Pharmacy'], ['cashier', 'Cashier'], ['billing', 'Billing officer'], ['admin', 'EMR admin']];
 
 const idOf = (v) => (v && typeof v === 'object' ? v._id : v || '');
 const dateOf = (v) => (v ? ymd(v) : '');
@@ -129,6 +131,22 @@ export function StaffFormModal({ open, onClose, staff, onSaved }) {
           <span className="text-sm"><span className="font-semibold text-slate-800">Payroll access</span><br />
             <span className="text-slate-500">Can sign in to Solucio Payroll with this account and send salaries, and gets payroll emails. Give it only to the people who run payroll.</span></span>
         </label>}
+        <div className="rounded-2xl bg-slate-50 p-3 sm:col-span-2">
+          <p className="text-sm font-semibold text-slate-800">EMR roles</p>
+          <p className="mb-2 text-sm text-slate-500">What this person does in Solucio EMR. They sign in there with this account. None ticked = no EMR access.</p>
+          <div className="flex flex-wrap gap-2">
+            {EMR_ROLES.map(([value, label]) => {
+              const on = (form.emrRoles || []).includes(value);
+              return (
+                <label key={value} className={`flex cursor-pointer items-center gap-2 rounded-full px-3 py-1.5 text-sm ring-1 transition ${on ? 'bg-brand-50 font-semibold text-brand-800 ring-brand-300' : 'bg-white text-slate-600 ring-slate-200'}`}>
+                  <input type="checkbox" className="h-4 w-4 accent-brand-700" checked={on}
+                    onChange={(e) => setForm({ ...form, emrRoles: e.target.checked ? [...(form.emrRoles || []), value] : (form.emrRoles || []).filter((r) => r !== value) })} />
+                  {label}
+                </label>
+              );
+            })}
+          </div>
+        </div>
         <Field label="Date joined"><input type="date" className="input" value={form.dateJoined} onChange={set('dateJoined')} /></Field>
         <Field label="Status">
           <select className="input" value={form.status} onChange={set('status')}>
@@ -206,7 +224,7 @@ export default function StaffList() {
                     </td>
                     <td className="whitespace-nowrap font-mono text-xs">{s.staffId}</td>
                     <td>{s.department || '—'}</td>
-                    <td>{s.jobTitle || '—'}{accessOf(s) !== 'staff' && <span className="ml-1"><Badge color="purple">{ACCESS_LABEL[accessOf(s)]}</Badge></span>}{s.payrollAccess && <span className="ml-1"><Badge color="teal">Payroll</Badge></span>}</td>
+                    <td>{s.jobTitle || '—'}{accessOf(s) !== 'staff' && <span className="ml-1"><Badge color="purple">{ACCESS_LABEL[accessOf(s)]}</Badge></span>}{s.payrollAccess && <span className="ml-1"><Badge color="teal">Payroll</Badge></span>}{s.emrRoles?.length > 0 && <span className="ml-1"><Badge color="blue">EMR</Badge></span>}</td>
                     <td>{fmtDate(s.dateJoined)}</td>
                     <td><span className={s.profileCompletion < 60 ? 'text-amber-600' : 'text-slate-600'}>{s.profileCompletion}%</span></td>
                     <td><Badge status={s.status} /></td>

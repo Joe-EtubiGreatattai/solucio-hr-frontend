@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { Check, Crosshair, Expand, MapPin, RefreshCw, Undo2, UserPlus, X } from 'lucide-react';
+import { Check, Crosshair, Expand, ImageOff, MapPin, RefreshCw, UserPlus, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api, { toastError } from '../../lib/api';
 import useFetch from '../../lib/useFetch';
 import { useLive } from '../../context/LiveContext';
 import { playNotificationSound } from '../../lib/sound';
-import { toastWithAction } from '../../lib/undo';
 import { Avatar, Badge, Button, Card, Empty, Field, Modal, PageHeader } from '../../components/ui';
-import { fmtTime, fullName, timeAgo, titleCase } from '../../lib/format';
+import { fmtTime, fullName, timeAgo } from '../../lib/format';
 import { Term } from '../../components/InfoTip';
 
 function DeskQr() {
@@ -134,7 +133,7 @@ function ManualCheckIn({ open, onClose }) {
     <Modal open={open} onClose={onClose} title="Check someone in manually" size="sm"
       footer={<><Button variant="secondary" onClick={onClose}>Cancel</Button><Button form="manual-form" loading={busy} disabled={!user}>Check in</Button></>}>
       <form id="manual-form" onSubmit={submit} className="space-y-4">
-        <p className="text-sm text-slate-500"><Term>For staff without their phone. Only do this once you've confirmed who they are in person.</Term></p>
+        <p className="text-sm text-slate-500"><Term>For staff without their phone or camera. Only do this once you've confirmed who they are in person.</Term></p>
         <Field label="Staff member">
           <select className="input" required value={user} onChange={(e) => setUser(e.target.value)}>
             <option value="">Select…</option>
@@ -147,76 +146,82 @@ function ManualCheckIn({ open, onClose }) {
   );
 }
 
+// The check-in selfie, fetched with the admin's sign-in (it isn't public).
+function Selfie({ request, className = '' }) {
+  const [src, setSrc] = useState(null);
+  const [missing, setMissing] = useState(!request.face?.selfie);
+  useEffect(() => {
+    if (!request.face?.selfie) return undefined;
+    let url;
+    api.get(`/attendance/check-in-requests/${request._id}/selfie`, { responseType: 'blob' })
+      .then(({ data }) => { url = URL.createObjectURL(data); setSrc(url); })
+      .catch(() => setMissing(true));
+    return () => url && URL.revokeObjectURL(url);
+  }, [request._id, request.face?.selfie]);
+  if (missing) return <div className={`flex flex-col items-center justify-center gap-1 rounded-xl bg-slate-100 text-center text-xs text-slate-500 ${className}`}><ImageOff className="h-5 w-5" />No selfie</div>;
+  return src ? <img src={src} alt={`Check-in selfie of ${fullName(request.user)}`} className={`rounded-xl object-cover ${className}`} />
+    : <div className={`animate-pulse rounded-xl bg-slate-100 ${className}`} />;
+}
+
+const avatarSrc = (path) => (path?.startsWith('/uploads') ? `${import.meta.env.VITE_API_ORIGIN || ''}${path}` : path);
+
+function ProfilePhoto({ user, className = '' }) {
+  return user.avatar ? <img src={avatarSrc(user.avatar)} alt={`Profile photo of ${fullName(user)}`} className={`rounded-xl object-cover ${className}`} />
+    : <div className={`flex flex-col items-center justify-center gap-1 rounded-xl bg-amber-50 text-center text-xs text-amber-800 ${className}`}><ImageOff className="h-5 w-5" />No profile photo</div>;
+}
+
+// How alike the two faces are, in words HR can act on.
+function likeness(distance, threshold) {
+  if (distance == null) return null;
+  if (distance <= threshold) return { label: 'Same person', color: 'green' };
+  if (distance <= 0.6) return { label: 'Possibly the same person', color: 'amber' };
+  return { label: 'Looks like a different person', color: 'red' };
+}
+
+const RESULT = {
+  face: (r) => (r.status === 'rejected' ? { label: 'Rejected', color: 'red' }
+    : r.status === 'review' ? { label: 'To review', color: 'amber' }
+      : r.face?.matched ? { label: 'Face match', color: 'green' } : { label: 'Approved', color: 'teal' }),
+  manual: () => ({ label: 'Manual', color: 'slate' }),
+};
+
 export default function CheckInDesk() {
-  const { data, reload } = useFetch('/attendance/check-in-requests', { initial: { pending: [], recent: [] } });
+  const { data, reload } = useFetch('/attendance/check-in-requests', { initial: { review: [], recent: [], threshold: 0.5 } });
   const [busyId, setBusyId] = useState(null);
   const [manual, setManual] = useState(false);
   const [rejecting, setRejecting] = useState(null);
   const [reason, setReason] = useState('');
   const seen = useRef(null);
-  const mine = useRef(new Set()); // requests this admin handled, so we don't report them as "someone else"
 
-  // Chime when someone new joins the queue (not on first load), and explain people who leave it
-  // because another admin handled them.
+  // Chime when a new check-in needs review (not on first load).
   useEffect(() => {
-    const ids = new Set(data.pending.map((p) => p._id));
-    if (seen.current) {
-      if ([...ids].some((id) => !seen.current.has(id))) playNotificationSound();
-      for (const id of seen.current) {
-        if (ids.has(id) || mine.current.has(id)) continue;
-        const handled = data.recent.find((r) => r._id === id);
-        if (handled) toast(`${handled.user.firstName} was ${handled.status} by ${handled.handledBy?.firstName || 'another admin'}`, { icon: 'ℹ️' });
-      }
-    }
+    const ids = new Set(data.review.map((r) => r._id));
+    if (seen.current && [...ids].some((id) => !seen.current.has(id))) playNotificationSound();
     seen.current = ids;
-  }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [data]);
 
-  const undo = async (r) => {
-    try {
-      await api.post(`/attendance/check-in-requests/${r._id}/undo`);
-      toast.success(r.method === 'manual' ? `${r.user.firstName}'s manual check-in undone` : `${r.user.firstName} is back in the queue`);
-      reload();
-    } catch (e) { toastError(e); }
-  };
-
-  const confirm = async (r) => {
+  const approve = async (r) => {
     setBusyId(r._id);
-    mine.current.add(r._id);
     try {
-      const { data: rec } = await api.post(`/attendance/check-in-requests/${r._id}/confirm`);
-      toastWithAction(`${r.user.firstName} checked in${rec.status === 'late' ? ` (${rec.lateMinutes} min late)` : ''}`, 'Undo', () => undo(r));
+      await api.post(`/attendance/check-in-requests/${r._id}/approve`);
+      toast.success(`${r.user.firstName}'s check-in approved`);
       reload();
     } catch (e) { toastError(e); reload(); } finally { setBusyId(null); }
   };
 
   const reject = async () => {
     const r = rejecting;
-    mine.current.add(r._id);
     try {
       await api.post(`/attendance/check-in-requests/${r._id}/reject`, { reason });
       setRejecting(null); setReason('');
-      toastWithAction(`${r.user.firstName}'s check-in rejected`, 'Undo', () => undo(r));
+      toast.success(`${r.user.firstName}'s check-in removed`);
       reload();
     } catch (e) { toastError(e); }
   };
 
-  // Shortcut for a busy desk: Enter confirms the person who has waited longest,
-  // unless the admin is typing or a dialog is open.
-  const first = data.pending[0];
-  useEffect(() => {
-    const onKey = (e) => {
-      if (e.key !== 'Enter' || !first || busyId || rejecting || manual) return;
-      if (e.target.closest('input, textarea, select, button, [role="dialog"]')) return;
-      e.preventDefault();
-      confirm(first);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }); // re-bind each render so it always targets the current first person
-
   return (
     <div>
-      <PageHeader title="Check-in desk" subtitle="Staff scan the code with their portal. Check each person against their photo, then confirm."
+      <PageHeader title="Check-in" subtitle="Staff scan the code and take a selfie. Faces that match their profile photo are checked in automatically; anything else comes here for you to review."
         actions={<>
           <Button variant="secondary" onClick={() => setManual(true)}><UserPlus className="h-4 w-4" /> Manual check-in</Button>
           <Button variant="secondary" onClick={() => document.documentElement.requestFullscreen?.()}><Expand className="h-4 w-4" /> Full screen</Button>
@@ -228,54 +233,63 @@ export default function CheckInDesk() {
             action={<Button variant="ghost" size="sm" title="Make all current codes stop working"
               onClick={() => api.post('/settings/desk-code/rotate').then(() => toast.success('Codes reset')).catch(toastError)}><RefreshCw className="h-4 w-4" /> Reset</Button>}>
             <DeskQr />
+            <p className="mt-4 text-center text-xs text-slate-500">Put this on a screen at the entrance. Nobody needs to staff it.</p>
           </Card>
           <SiteLocation />
         </div>
 
         <div className="space-y-6 lg:col-span-3">
-          <Card title={`Waiting for confirmation (${data.pending.length})`} bodyClass="p-0"
-            action={first && <span className="hidden text-xs text-slate-500 sm:inline">Press <kbd className="rounded border border-slate-300 bg-slate-50 px-1.5 py-0.5 font-mono text-xs">Enter</kbd> to confirm {first.user.firstName}</span>}>
-            {data.pending.length === 0 ? <Empty title="Nobody waiting">People appear here as soon as they scan the code.</Empty> : (
+          <Card title={`To review (${data.review.length})`} bodyClass="p-0">
+            {data.review.length === 0 ? <Empty title="Nothing to review">Check-ins whose selfie didn't match the profile photo appear here. Everyone else is checked in automatically.</Empty> : (
               <ul className="divide-y divide-slate-100">
-                {data.pending.map((r) => (
-                  // New arrivals slide in with a brief highlight.
-                  <li key={r._id} className="flex animate-[fade-up_0.4s_ease-out_both,flash_1.6s_ease-out_both] flex-wrap items-center gap-4 p-4">
-                    <Avatar user={r.user} size="xl" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-lg font-bold">{fullName(r.user)}</p>
-                      <p className="text-sm text-slate-500">{r.user.jobTitle || '—'} · {r.user.department || '—'} · <span className="font-mono">{r.user.staffId}</span></p>
-                      <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
-                        {r.shift
-                          ? <Badge color="teal">{`${titleCase(r.shift.shiftType)} ${r.shift.startTime}–${r.shift.endTime}`}</Badge>
-                          : <Badge color="purple">No shift right now</Badge>}
-                        {!r.user.avatar && <Badge color="amber">No profile photo · check ID badge</Badge>}
-                        {r.location && <Badge color="teal">{`On site · ${r.location.distance}m away`}</Badge>}
-                        <span className="text-slate-500">Scanned {fmtTime(r.createdAt)} ({timeAgo(r.createdAt)})</span>
+                {data.review.map((r) => {
+                  const like = likeness(r.face?.distance, data.threshold);
+                  return (
+                    <li key={r._id} className="animate-fade-up p-4">
+                      <div className="flex flex-wrap items-start gap-4">
+                        <div className="flex gap-2">
+                          <figure className="text-center"><Selfie request={r} className="h-28 w-28" /><figcaption className="mt-1 text-xs text-slate-500">Selfie</figcaption></figure>
+                          <figure className="text-center"><ProfilePhoto user={r.user} className="h-28 w-28" /><figcaption className="mt-1 text-xs text-slate-500">Profile photo</figcaption></figure>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-lg font-bold">{fullName(r.user)}</p>
+                          <p className="text-sm text-slate-500">{r.user.jobTitle || '—'} · {r.user.department || '—'} · <span className="font-mono">{r.user.staffId}</span></p>
+                          <p className="mt-2 text-sm font-medium text-amber-800">{r.face?.reason || 'Needs a check'}</p>
+                          <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
+                            {like && <Badge color={like.color}>{like.label}</Badge>}
+                            {r.location && <Badge color="teal">{`On site · ${r.location.distance}m away`}</Badge>}
+                            <span className="text-slate-500">Checked in {fmtTime(r.createdAt)} ({timeAgo(r.createdAt)})</span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="secondary" onClick={() => setRejecting(r)}><X className="h-4 w-4" /> Reject</Button>
-                      <Button variant="success" loading={busyId === r._id} onClick={() => confirm(r)}><Check className="h-4 w-4" /> Confirm</Button>
-                    </div>
-                  </li>
-                ))}
+                      <div className="mt-3 flex justify-end gap-2">
+                        <Button variant="secondary" onClick={() => setRejecting(r)}><X className="h-4 w-4" /> Not them</Button>
+                        <Button variant="success" loading={busyId === r._id} onClick={() => approve(r)}><Check className="h-4 w-4" /> It's them</Button>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </Card>
 
-          <Card title="Recently handled" bodyClass="p-0">
-            {data.recent.length === 0 ? <Empty title="Nothing yet today" /> : (
+          <Card title="Today's check-ins" bodyClass="p-0">
+            {data.recent.length === 0 ? <Empty title="Nobody yet today" /> : (
               <ul className="divide-y divide-slate-100">
-                {data.recent.map((r) => (
-                  <li key={r._id} className="flex animate-fade-in items-center gap-3 px-4 py-2.5 text-sm">
-                    <Avatar user={r.user} size="sm" />
-                    <span className="flex-1 font-medium">{fullName(r.user)}</span>
-                    {r.method === 'manual' && <Badge color="slate">Manual</Badge>}
-                    <Badge status={r.status} />
-                    <span className="text-xs text-slate-500">{fmtTime(r.handledAt)} · {r.handledBy?.firstName}</span>
-                    <Button variant="ghost" size="sm" onClick={() => undo(r)} aria-label={`Undo ${r.status} for ${fullName(r.user)}`}><Undo2 className="h-3.5 w-3.5" /> Undo</Button>
-                  </li>
-                ))}
+                {data.recent.map((r) => {
+                  const res = (RESULT[r.method] || RESULT.face)(r);
+                  return (
+                    <li key={r._id} className="flex animate-fade-in flex-wrap items-center gap-3 px-4 py-2.5 text-sm">
+                      <Avatar user={r.user} size="sm" />
+                      <span className="flex-1 font-medium">{fullName(r.user)}</span>
+                      <Badge color={res.color}>{res.label}</Badge>
+                      <span className="text-xs text-slate-500">{fmtTime(r.createdAt)}{r.handledBy ? ` · ${r.handledBy.firstName}` : ''}</span>
+                      {r.method === 'face' && r.status === 'confirmed' && (
+                        <Button variant="ghost" size="sm" onClick={() => setRejecting(r)} aria-label={`Reject ${fullName(r.user)}'s check-in`}>Reject</Button>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </Card>
@@ -283,10 +297,16 @@ export default function CheckInDesk() {
       </div>
 
       <ManualCheckIn open={manual} onClose={() => { setManual(false); reload(); }} />
-      <Modal open={!!rejecting} onClose={() => setRejecting(null)} title={`Reject ${rejecting ? fullName(rejecting.user) : ''}`} size="sm"
-        footer={<><Button variant="secondary" onClick={() => setRejecting(null)}>Cancel</Button><Button variant="danger" onClick={reject}>Reject check-in</Button></>}>
+      <Modal open={!!rejecting} onClose={() => setRejecting(null)} title={`Reject ${rejecting ? fullName(rejecting.user) : ''}'s check-in`} size="sm"
+        footer={<><Button variant="secondary" onClick={() => setRejecting(null)}>Cancel</Button><Button variant="danger" onClick={reject}>Remove check-in</Button></>}>
+        {rejecting && (
+          <div className="mb-4 flex justify-center gap-2">
+            <Selfie request={rejecting} className="h-24 w-24" /><ProfilePhoto user={rejecting.user} className="h-24 w-24" />
+          </div>
+        )}
+        <p className="mb-3 text-sm text-slate-500">Their check-in is removed from attendance and they're notified.</p>
         <Field label="Reason (shown to the staff member)">
-          <textarea rows={3} className="input" placeholder="e.g. Person at the desk didn't match the profile photo" value={reason} onChange={(e) => setReason(e.target.value)} />
+          <textarea rows={3} className="input" placeholder="e.g. The selfie isn't you. Please see HR." value={reason} onChange={(e) => setReason(e.target.value)} />
         </Field>
       </Modal>
     </div>

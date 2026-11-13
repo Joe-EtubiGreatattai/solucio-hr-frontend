@@ -21,3 +21,14 @@ export function timeAgo(d) {
 }
 
 export const periodLabel = (p) => { const [y, m] = p.split('-'); return new Date(y, m - 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }); };
+
+// How an arrival was verified, for attendance tables and exports.
+export function checkInVerification(r) {
+  const by = r.confirmedBy ? `${r.confirmedBy.firstName} ${r.confirmedBy.lastName}` : '';
+  if (r.checkInMethod === 'manual') return by ? `${by} (manual)` : 'Manual';
+  if (r.checkInMethod === 'face') {
+    if (r.faceReview === 'pending') return 'Face · HR to review';
+    return by ? `Face · approved by ${by}` : 'Face match';
+  }
+  return by || '—';
+}

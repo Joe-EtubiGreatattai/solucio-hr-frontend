@@ -32,6 +32,7 @@ export default function Profile() {
     try {
       const fd = new FormData();
       Object.entries({ ...form, skills: form.skills.filter((sk) => sk.name.trim()) }).forEach(([k, v]) => fd.append(k, typeof v === 'object' ? JSON.stringify(v) : v));
+      // The server checks the photo shows one clear face: check-in selfies are matched against it.
       if (avatar) fd.append('avatar', avatar);
       const { data } = await api.put('/users/me', fd);
       setUser(data);
@@ -74,7 +75,7 @@ export default function Profile() {
                 </span>
                 <input type="file" accept="image/*" className="sr-only" aria-label="Change profile photo" onChange={(e) => setAvatar(e.target.files[0])} />
               </label>
-              <p className="mt-2 text-xs text-slate-500">{avatar ? 'New photo selected. Save your profile to keep it.' : 'Tap the photo to change it. HR uses it to confirm who you are at check-in.'}</p>
+              <p className="mt-2 text-xs text-slate-500">{avatar ? 'New photo selected. Save your profile to keep it.' : 'Tap the photo to change it. Use a clear photo of your face: your check-in selfie is matched against it.'}</p>
               <p className="mt-3 text-lg font-bold">{user.firstName} {user.lastName}</p>
               <p className="text-sm text-slate-500">{user.jobTitle || '—'} · {user.department || '—'}</p>
               <div className="mt-4 w-full text-left">

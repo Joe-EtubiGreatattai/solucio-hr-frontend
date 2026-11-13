@@ -61,6 +61,7 @@ const G = {
   in: 'Check-in time.',
   out: 'Check-out time.',
   'confirmed by': 'The admin who confirmed this person really was at the desk.',
+  verified: 'How the arrival was confirmed: a face match against their profile photo, HR approving a selfie that didn\'t match, or a manual check-in by HR.',
   'check-ins this week': 'How many people checked in each day this week.',
   shifts: 'Number of rostered shifts.',
   'shift timer': 'How long you’ve been on shift, against how long the shift is.',

@@ -133,7 +133,7 @@ export function ClockCard() {
         ) : (
           <Link to="/check-in" className="block">
             <Button variant={pending ? 'secondary' : 'primary'} className="w-full">
-              {pending ? 'Waiting for the admin…' : <><QrCode className="h-4 w-4" /> Check in at the desk</>}
+              {pending ? 'Waiting for the admin…' : <><QrCode className="h-4 w-4" /> Check in</>}
             </Button>
           </Link>
         )}
@@ -303,7 +303,7 @@ export default function StaffDashboard() {
   const hour = new Date().getHours();
 
   const tasks = [
-    { label: 'Add a profile photo', hint: 'Used to confirm you at check-in', done: !!user.avatar, to: '/profile' },
+    { label: 'Add a profile photo', hint: 'Your check-in selfie is matched against it', done: !!user.avatar, to: '/profile' },
     { label: 'Emergency contact', hint: 'Who to call if something happens', done: !!(user.emergencyContact?.name && user.emergencyContact?.phone), to: '/profile' },
     { label: 'Bank details', hint: 'For salary and approved loans', done: !!user.bankDetails?.accountNumber, to: '/profile' },
     { label: 'Upload a certificate', hint: 'Licence, BLS and training', done: certs.length > 0, to: '/certificates' },

@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import api, { toastError } from '../../lib/api';
 import useFetch from '../../lib/useFetch';
 import { Avatar, Badge, Button, Card, Empty, Field, IconButton, Modal, PageHeader, ProgressBar, Spinner, Tabs } from '../../components/ui';
-import { fmtDate, fmtMinutes, fmtTime, fullName, titleCase, ymd } from '../../lib/format';
+import { checkInVerification, fmtDate, fmtMinutes, fmtTime, fullName, titleCase, ymd } from '../../lib/format';
 import { downloadAttendanceRecordsPdf, downloadPunctualityPdf } from '../../lib/attendancePdf';
 import { Term } from '../../components/InfoTip';
 
@@ -96,7 +96,7 @@ function Records() {
       </div>
       {loading ? <Spinner /> : records.length === 0 ? <Empty title="No records" /> : (
         <div className="overflow-x-auto"><table className="table">
-          <thead><tr><th><Term>Staff</Term></th><th><Term>Date</Term></th><th><Term>Shift</Term></th><th><Term>In</Term></th><th><Term>Out</Term></th><th><Term>Worked</Term></th><th><Term>Confirmed by</Term></th><th><Term>Status</Term></th><th /></tr></thead>
+          <thead><tr><th><Term>Staff</Term></th><th><Term>Date</Term></th><th><Term>Shift</Term></th><th><Term>In</Term></th><th><Term>Out</Term></th><th><Term>Worked</Term></th><th><Term>Verified</Term></th><th><Term>Status</Term></th><th /></tr></thead>
           <tbody>{records.map((r) => (
             <tr key={r._id}>
               <td className="font-medium">{fullName(r.user)}<p className="text-xs font-normal text-slate-500">{r.user?.department}</p></td>
@@ -104,7 +104,7 @@ function Records() {
               <td className="text-slate-500">{r.shift ? `${r.shift.startTime}–${r.shift.endTime}` : '—'}</td>
               <td>{fmtTime(r.clockIn)}</td><td>{r.clockOut ? fmtTime(r.clockOut) : <Badge color="blue">On duty</Badge>}</td>
               <td>{fmtMinutes(r.workedMinutes)}</td>
-              <td>{r.confirmedBy ? <span className="text-sm">{r.confirmedBy.firstName} {r.confirmedBy.lastName}{r.checkInMethod === 'manual' && <span className="ml-1 text-xs text-slate-500">(manual)</span>}</span> : <span className="text-xs text-slate-500">—</span>}</td>
+              <td className="text-sm">{checkInVerification(r)}</td>
               <td><Badge status={r.status}>{r.status === 'late' ? `Late ${r.lateMinutes}m` : undefined}</Badge></td>
               <td><IconButton icon={Pencil} label={`Adjust ${fullName(r.user)}'s record`} onClick={() => setEdit({ ...r, clockInLocal: local(r.clockIn), clockOutLocal: local(r.clockOut) })} /></td>
             </tr>

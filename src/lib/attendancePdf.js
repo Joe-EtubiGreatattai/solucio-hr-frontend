@@ -1,4 +1,4 @@
-import { fmtDate, fmtMinutes, fmtTime, fullName, titleCase } from './format';
+import { checkInVerification, fmtDate, fmtMinutes, fmtTime, fullName, titleCase } from './format';
 
 const BRAND = [15, 118, 110]; // brand-700
 const STATUS_LABEL = { on_time: 'On time', late: 'Late', unscheduled: 'Unscheduled' };
@@ -72,13 +72,13 @@ export async function downloadAttendanceRecordsPdf(records, filters) {
 
   autoTable(doc, {
     ...tableStyle,
-    head: [['Staff', 'Staff ID', 'Department', 'Date', 'Shift', 'In', 'Out', 'Worked', 'Status', 'Confirmed by']],
+    head: [['Staff', 'Staff ID', 'Department', 'Date', 'Shift', 'In', 'Out', 'Worked', 'Status', 'Verified']],
     body: records.map((r) => [
       fullName(r.user), r.user?.staffId || '', r.user?.department || '', fmtDate(r.clockIn),
       r.shift ? `${titleCase(r.shift.shiftType)} ${r.shift.startTime}–${r.shift.endTime}` : 'Unscheduled',
       fmtTime(r.clockIn), r.clockOut ? fmtTime(r.clockOut) : 'On duty', fmtMinutes(r.workedMinutes),
       r.status === 'late' ? `Late ${r.lateMinutes}m` : STATUS_LABEL[r.status],
-      r.confirmedBy ? `${fullName(r.confirmedBy)}${r.checkInMethod === 'manual' ? ' (manual)' : ''}` : '—',
+      checkInVerification(r),
     ]),
     didParseCell: (d) => {
       if (d.section === 'body' && d.column.index === 8 && String(d.cell.raw).startsWith('Late')) d.cell.styles.textColor = [180, 83, 9];

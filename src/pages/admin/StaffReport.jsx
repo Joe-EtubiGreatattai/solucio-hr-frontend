@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import api, { toastError } from '../../lib/api';
 import useFetch from '../../lib/useFetch';
 import { Avatar, Badge, Button, Card, Empty, ProgressBar, Spinner, Tabs } from '../../components/ui';
-import { fmtDate, fmtDateTime, fmtMinutes, fmtMoney, fmtTime, fullName, titleCase, ymd } from '../../lib/format';
+import { checkInVerification, fmtDate, fmtDateTime, fmtMinutes, fmtMoney, fmtTime, fullName, titleCase, ymd } from '../../lib/format';
 import { REQUEST_TYPES, RequestSummary } from '../staff/Requests';
 import { KIND_COLOR } from '../staff/Notes';
 import { StaffFormModal } from './StaffList';
@@ -181,13 +181,13 @@ export default function StaffReport() {
           <Card bodyClass="p-0">
             {attendance.recent.length === 0 ? <Empty title="No check-ins in this period" /> : (
               <div className="overflow-x-auto"><table className="table">
-                <thead><tr><th><Term>Date</Term></th><th><Term>Shift</Term></th><th><Term>In</Term></th><th><Term>Out</Term></th><th><Term>Worked</Term></th><th><Term>Confirmed by</Term></th><th><Term>Status</Term></th></tr></thead>
+                <thead><tr><th><Term>Date</Term></th><th><Term>Shift</Term></th><th><Term>In</Term></th><th><Term>Out</Term></th><th><Term>Worked</Term></th><th><Term>Verified</Term></th><th><Term>Status</Term></th></tr></thead>
                 <tbody>{attendance.recent.map((r) => (
                   <tr key={r._id}>
                     <td>{fmtDate(r.clockIn)}</td>
                     <td className="text-slate-500">{r.shift ? `${titleCase(r.shift.shiftType)} ${r.shift.startTime}–${r.shift.endTime}` : 'Unscheduled'}</td>
                     <td>{fmtTime(r.clockIn)}</td><td>{fmtTime(r.clockOut)}</td><td>{fmtMinutes(r.workedMinutes)}</td>
-                    <td>{r.confirmedBy ? <span className="text-sm">{r.confirmedBy.firstName} {r.confirmedBy.lastName}{r.checkInMethod === 'manual' && <span className="ml-1 text-xs text-slate-500">(manual)</span>}</span> : <span className="text-xs text-slate-500">—</span>}</td>
+                    <td className="text-sm">{checkInVerification(r)}</td>
                     <td><Badge status={r.status}>{r.status === 'late' ? `Late ${r.lateMinutes}m` : undefined}</Badge>
                       {r.earlyLeaveMinutes > 0 && <span className="ml-1"><Badge color="amber">Left {r.earlyLeaveMinutes}m early</Badge></span>}</td>
                   </tr>

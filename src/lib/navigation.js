@@ -31,7 +31,7 @@ export const ADMIN_NAV = [
   { title: 'Time & attendance', items: [
     { to: '/admin/rosters', label: 'Rosters', icon: CalendarRange },
     { to: '/admin/attendance', label: 'Attendance', icon: ClipboardCheck },
-    { to: '/admin/check-in-desk', label: 'Check-in desk', icon: QrCode, badge: 'desk' },
+    { to: '/admin/check-in-desk', label: 'Check-in', icon: QrCode, badge: 'desk' },
     { to: '/admin/requests', label: 'Requests', icon: Inbox, badge: 'requests' },
   ] },
   { title: 'Engagement & relations', items: [

@@ -135,7 +135,7 @@ function NextUp({ data, onRemind }) {
   const cert = data.nextExpiring[0];
   let content;
   if (data.waitingAtDesk > 0) {
-    content = { title: `${data.waitingAtDesk} waiting at the desk`, text: 'Scanned in and waiting for you to confirm who they are.', action: <Link to="/admin/check-in-desk" className="block"><Button size="lg" className="w-full"><QrCode className="h-5 w-5" /> Open check-in desk</Button></Link> };
+    content = { title: `${data.waitingAtDesk} check-in${data.waitingAtDesk === 1 ? '' : 's'} to review`, text: "Their selfie didn't match their profile photo. Compare the two and approve or reject.", action: <Link to="/admin/check-in-desk" className="block"><Button size="lg" className="w-full"><QrCode className="h-5 w-5" /> Review check-ins</Button></Link> };
   } else if (cert) {
     const days = Math.ceil((new Date(cert.expiryDate) - Date.now()) / 86400000);
     content = { title: `${cert.user.firstName}'s ${cert.title}`, text: `Expires ${fmtDate(cert.expiryDate)} (in ${days} day${days === 1 ? '' : 's'})`, action: <Button size="lg" className="w-full" onClick={() => onRemind(cert)}><Bell className="h-5 w-5" /> Send reminder</Button> };

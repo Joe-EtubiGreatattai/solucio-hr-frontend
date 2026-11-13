@@ -20,13 +20,29 @@ function clock(t) {
 }
 
 // A, B, … Z, AA, AB, …
-const letterFor = (i) => (i < 26 ? String.fromCharCode(65 + i) : letterFor(Math.floor(i / 26) - 1) + String.fromCharCode(65 + (i % 26)));
+export const letterFor = (i) => (i < 26 ? String.fromCharCode(65 + i) : letterFor(Math.floor(i / 26) - 1) + String.fromCharCode(65 + (i % 26)));
 
 const mostCommon = (list) => {
   const counts = new Map();
   list.forEach((v) => counts.set(v, (counts.get(v) || 0) + 1));
   return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
 };
+
+// Each person's letter: the one HR chose for this roster, otherwise the next free letter in name order.
+export function rosterLetters(roster, people) {
+  const chosen = new Map((roster.letters || []).map((l) => [String(l.user?._id || l.user), l.letter]));
+  const used = new Set();
+  const out = new Map();
+  people.forEach((p) => { const l = chosen.get(String(p._id)); if (l && !used.has(l)) { out.set(p._id, l); used.add(l); } });
+  let next = 0;
+  people.forEach((p) => {
+    if (out.has(p._id)) return;
+    while (used.has(letterFor(next))) next++;
+    out.set(p._id, letterFor(next));
+    used.add(letterFor(next));
+  });
+  return out;
+}
 
 function eachDay(from, to) {
   const out = [];
@@ -53,8 +69,11 @@ export async function downloadRosterPdf(roster, shifts, leave = []) {
   const people = [...new Map(shifts.filter((s) => s.user).map((s) => [s.user._id, s.user])).values()]
     .sort((a, b) => `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`));
   const firstNames = people.map((p) => p.firstName.trim().split(/\s+/)[0]);
-  const letters = new Map(people.map((p, i) => [p._id, letterFor(i)]));
-  const names = people.map((p, i) => (firstNames.filter((f) => f === firstNames[i]).length > 1 ? `${firstNames[i]} ${p.lastName[0]}.` : firstNames[i]));
+  const letters = rosterLetters(roster, people);
+  const nameOf = (p) => {
+    const first = p.firstName.trim().split(/\s+/)[0];
+    return firstNames.filter((f) => f === first).length > 1 ? `${first} ${p.lastName[0]}.` : first;
+  };
 
   // Column groups: one per kind of shift used (custom hours each get their own), then OFF.
   const groupKey = (s) => (s.shiftType === 'custom' ? `custom:${s.startTime}-${s.endTime}` : s.shiftType);
@@ -106,7 +125,9 @@ export async function downloadRosterPdf(roster, shifts, leave = []) {
   doc.setFontSize(12).text(`${roster.department ? `${roster.department.toUpperCase()} ` : ''}${periodTitle(roster.startDate, roster.endDate)}`, W / 2, y, { align: 'center' });
   y += 20;
   doc.setFontSize(9.5);
-  const items = people.map((p, i) => ({ letter: letters.get(p._id), name: names[i] }));
+  // Key in letter order (A, B, C … then AA …).
+  const items = people.map((p) => ({ letter: letters.get(p._id), name: nameOf(p) }))
+    .sort((a, b) => a.letter.length - b.letter.length || a.letter.localeCompare(b.letter));
   const lines = [[]];
   const widthOf = (it) => doc.setFont('helvetica', 'bold').getTextWidth(it.letter) + doc.setFont('helvetica', 'normal').getTextWidth(`=${it.name}, `);
   let lineW = 0;

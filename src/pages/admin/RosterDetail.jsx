@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, FileDown, Plus, Send, Trash2, Undo2 } from 'lucide-react';
+import { ArrowLeft, CaseSensitive, FileDown, FileUp, Plus, Send, Trash2, Undo2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api, { toastError } from '../../lib/api';
 import useFetch from '../../lib/useFetch';
@@ -14,6 +14,8 @@ import { Term } from '../../components/InfoTip';
 import CoverageGaps from '../../components/CoverageGaps';
 import StaffingRules from '../../components/StaffingRules';
 import { downloadRosterPdf } from '../../lib/rosterPdf';
+import RosterLetters from '../../components/RosterLetters';
+import RosterImport from '../../components/RosterImport';
 
 function datesBetween(from, to) {
   const out = [];
@@ -122,6 +124,8 @@ export default function RosterDetail() {
   const undo = useUndoDelete();
   const ask = useConfirm();
   const [printing, setPrinting] = useState(false);
+  const [lettersOpen, setLettersOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   // The roster as a printable PDF, with approved leave highlighted in the OFF columns.
   const downloadPdf = async () => {
@@ -204,6 +208,8 @@ export default function RosterDetail() {
         title={<span className="flex items-center gap-3">{roster.title} <Badge status={roster.status} /></span>}
         subtitle={`${fmtDate(roster.startDate)} – ${fmtDate(roster.endDate)} · ${roster.department || 'All departments'} · ${shifts.length} shifts, ${rows.length} staff`}
         actions={<>
+          <Button variant="secondary" onClick={() => setImportOpen(true)}><FileUp className="h-4 w-4" /> Import PDF</Button>
+          <Button variant="secondary" disabled={!shifts.length} onClick={() => setLettersOpen(true)}><CaseSensitive className="h-4 w-4" /> Letters</Button>
           <Button variant="secondary" loading={printing} disabled={!shifts.length} onClick={downloadPdf}><FileDown className="h-4 w-4" /> Download PDF</Button>
           <Button variant="secondary" onClick={() => setAssign({})}><Plus className="h-4 w-4" /> Assign shifts</Button>
           <Button variant={roster.status === 'published' ? 'secondary' : 'primary'} onClick={togglePublish}>
@@ -289,6 +295,8 @@ export default function RosterDetail() {
           </dl>
         )}
       </Modal>
+      <RosterLetters open={lettersOpen} onClose={() => setLettersOpen(false)} roster={roster} shifts={shifts} onSaved={reload} />
+      <RosterImport open={importOpen} onClose={() => setImportOpen(false)} roster={roster} presets={presets} onDone={() => { reload(); reloadCoverage(); }} />
     </div>
   );
 }

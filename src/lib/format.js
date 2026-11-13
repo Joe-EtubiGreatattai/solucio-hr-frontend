@@ -22,13 +22,12 @@ export function timeAgo(d) {
 
 export const periodLabel = (p) => { const [y, m] = p.split('-'); return new Date(y, m - 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }); };
 
-// How an arrival was verified, for attendance tables and exports.
+// How an arrival (and departure) was verified, for attendance tables and exports.
 export function checkInVerification(r) {
   const by = r.confirmedBy ? `${r.confirmedBy.firstName} ${r.confirmedBy.lastName}` : '';
-  if (r.checkInMethod === 'manual') return by ? `${by} (manual)` : 'Manual';
-  if (r.checkInMethod === 'face') {
-    if (r.faceReview === 'pending') return 'Face · HR to review';
-    return by ? `Face · approved by ${by}` : 'Face match';
-  }
-  return by || '—';
+  let text = by || '—';
+  if (r.checkInMethod === 'manual') text = by ? `${by} (manual)` : 'Manual';
+  else if (r.checkInMethod === 'face') text = r.faceReview === 'pending' ? 'Face · HR to review' : by ? `Face · approved by ${by}` : 'Face match';
+  if (r.clockOutReview === 'pending') text += ' · check-out to review';
+  return text;
 }

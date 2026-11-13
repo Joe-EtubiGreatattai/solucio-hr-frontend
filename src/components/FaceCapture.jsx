@@ -6,7 +6,7 @@ const MAX_WIDTH = 480; // selfies are sent and stored small (~40KB)
 
 // Front-camera selfie. Calls onCapture({ blob }); the server finds the face and checks it.
 // Only a live camera frame can be used (no gallery upload), so it has to be taken there and then.
-export default function FaceCapture({ onCapture, onUnavailable, busy }) {
+export default function FaceCapture({ onCapture, onUnavailable, busy, label = 'Take photo and check in' }) {
   const videoRef = useRef();
   const [phase, setPhase] = useState(!window.isSecureContext || !navigator.mediaDevices?.getUserMedia ? 'unsupported' : 'loading');
 
@@ -49,9 +49,9 @@ export default function FaceCapture({ onCapture, onUnavailable, busy }) {
         <p className="mt-2 font-semibold">{phase === 'denied' ? 'Camera is blocked' : "The camera isn't available"}</p>
         <p className="mt-1 text-sm text-slate-500">
           {phase === 'denied' ? 'Allow the camera for this site in your browser settings, then try again.' : 'This phone or browser couldn’t start the camera.'}
-          {' '}You can still check in; HR will review it.
+          {' '}You can still go ahead; HR will review it.
         </p>
-        <Button variant="secondary" className="mt-4" loading={busy} onClick={onUnavailable}>Check in without a photo</Button>
+        <Button variant="secondary" className="mt-4" loading={busy} onClick={onUnavailable}>Continue without a photo</Button>
       </div>
     );
   }
@@ -67,7 +67,7 @@ export default function FaceCapture({ onCapture, onUnavailable, busy }) {
       </div>
       <p className="mt-3 text-sm text-slate-600">Fit your face in the oval, in good light.</p>
       <Button className="mt-3" size="lg" disabled={phase !== 'live' || busy} loading={busy} onClick={take}>
-        <Camera className="h-5 w-5" /> {busy ? 'Checking…' : 'Take photo and check in'}
+        <Camera className="h-5 w-5" /> {busy ? 'Checking…' : label}
       </Button>
     </div>
   );

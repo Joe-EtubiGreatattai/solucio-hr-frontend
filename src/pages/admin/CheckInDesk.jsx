@@ -204,7 +204,7 @@ export default function CheckInDesk() {
     setBusyId(r._id);
     try {
       await api.post(`/attendance/check-in-requests/${r._id}/approve`);
-      toast.success(`${r.user.firstName}'s check-in approved`);
+      toast.success(`${r.user.firstName}'s check-${r.direction === 'out' ? 'out' : 'in'} approved`);
       reload();
     } catch (e) { toastError(e); reload(); } finally { setBusyId(null); }
   };
@@ -214,14 +214,14 @@ export default function CheckInDesk() {
     try {
       await api.post(`/attendance/check-in-requests/${r._id}/reject`, { reason });
       setRejecting(null); setReason('');
-      toast.success(`${r.user.firstName}'s check-in removed`);
+      toast.success(r.direction === 'out' ? `${r.user.firstName}'s check-out undone` : `${r.user.firstName}'s check-in removed`);
       reload();
     } catch (e) { toastError(e); }
   };
 
   return (
     <div>
-      <PageHeader title="Check-in" subtitle="Staff scan the code and take a selfie. Faces that match their profile photo are checked in automatically; anything else comes here for you to review."
+      <PageHeader title="Check-in" subtitle="Staff scan the code and take a selfie, arriving and leaving. Faces that match their profile photo go through automatically; anything else comes here for you to review."
         actions={<>
           <Button variant="secondary" onClick={() => setManual(true)}><UserPlus className="h-4 w-4" /> Manual check-in</Button>
           <Button variant="secondary" onClick={() => document.documentElement.requestFullscreen?.()}><Expand className="h-4 w-4" /> Full screen</Button>
@@ -240,7 +240,7 @@ export default function CheckInDesk() {
 
         <div className="space-y-6 lg:col-span-3">
           <Card title={`To review (${data.review.length})`} bodyClass="p-0">
-            {data.review.length === 0 ? <Empty title="Nothing to review">Check-ins whose selfie didn't match the profile photo appear here. Everyone else is checked in automatically.</Empty> : (
+            {data.review.length === 0 ? <Empty title="Nothing to review">Check-ins and check-outs whose selfie didn't match the profile photo appear here. Everyone else goes through automatically.</Empty> : (
               <ul className="divide-y divide-slate-100">
                 {data.review.map((r) => {
                   const like = likeness(r.face?.distance, data.threshold);
@@ -252,13 +252,13 @@ export default function CheckInDesk() {
                           <figure className="text-center"><ProfilePhoto user={r.user} className="h-28 w-28" /><figcaption className="mt-1 text-xs text-slate-500">Profile photo</figcaption></figure>
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-lg font-bold">{fullName(r.user)}</p>
+                          <p className="flex flex-wrap items-center gap-2 text-lg font-bold">{fullName(r.user)}<Badge color={r.direction === 'out' ? 'purple' : 'blue'}>{r.direction === 'out' ? 'Check-out' : 'Check-in'}</Badge></p>
                           <p className="text-sm text-slate-500">{r.user.jobTitle || '—'} · {r.user.department || '—'} · <span className="font-mono">{r.user.staffId}</span></p>
                           <p className="mt-2 text-sm font-medium text-amber-800">{r.face?.reason || 'Needs a check'}</p>
                           <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
                             {like && <Badge color={like.color}>{like.label}</Badge>}
                             {r.location && <Badge color="teal">{`On site · ${r.location.distance}m away`}</Badge>}
-                            <span className="text-slate-500">Checked in {fmtTime(r.createdAt)} ({timeAgo(r.createdAt)})</span>
+                            <span className="text-slate-500">Checked {r.direction === 'out' ? 'out' : 'in'} {fmtTime(r.createdAt)} ({timeAgo(r.createdAt)})</span>
                           </div>
                         </div>
                       </div>
@@ -273,7 +273,7 @@ export default function CheckInDesk() {
             )}
           </Card>
 
-          <Card title="Today's check-ins" bodyClass="p-0">
+          <Card title="Today's check-ins and check-outs" bodyClass="p-0">
             {data.recent.length === 0 ? <Empty title="Nobody yet today" /> : (
               <ul className="divide-y divide-slate-100">
                 {data.recent.map((r) => {
@@ -282,10 +282,11 @@ export default function CheckInDesk() {
                     <li key={r._id} className="flex animate-fade-in flex-wrap items-center gap-3 px-4 py-2.5 text-sm">
                       <Avatar user={r.user} size="sm" />
                       <span className="flex-1 font-medium">{fullName(r.user)}</span>
+                      <span className="text-xs text-slate-500">{r.direction === 'out' ? 'Out' : 'In'}</span>
                       <Badge color={res.color}>{res.label}</Badge>
                       <span className="text-xs text-slate-500">{fmtTime(r.createdAt)}{r.handledBy ? ` · ${r.handledBy.firstName}` : ''}</span>
                       {r.method === 'face' && r.status === 'confirmed' && (
-                        <Button variant="ghost" size="sm" onClick={() => setRejecting(r)} aria-label={`Reject ${fullName(r.user)}'s check-in`}>Reject</Button>
+                        <Button variant="ghost" size="sm" onClick={() => setRejecting(r)} aria-label={`Reject ${fullName(r.user)}'s check-${r.direction === 'out' ? 'out' : 'in'}`}>Reject</Button>
                       )}
                     </li>
                   );
@@ -297,14 +298,16 @@ export default function CheckInDesk() {
       </div>
 
       <ManualCheckIn open={manual} onClose={() => { setManual(false); reload(); }} />
-      <Modal open={!!rejecting} onClose={() => setRejecting(null)} title={`Reject ${rejecting ? fullName(rejecting.user) : ''}'s check-in`} size="sm"
-        footer={<><Button variant="secondary" onClick={() => setRejecting(null)}>Cancel</Button><Button variant="danger" onClick={reject}>Remove check-in</Button></>}>
+      <Modal open={!!rejecting} onClose={() => setRejecting(null)} title={`Reject ${rejecting ? fullName(rejecting.user) : ''}'s check-${rejecting?.direction === 'out' ? 'out' : 'in'}`} size="sm"
+        footer={<><Button variant="secondary" onClick={() => setRejecting(null)}>Cancel</Button><Button variant="danger" onClick={reject}>{rejecting?.direction === 'out' ? 'Undo check-out' : 'Remove check-in'}</Button></>}>
         {rejecting && (
           <div className="mb-4 flex justify-center gap-2">
             <Selfie request={rejecting} className="h-24 w-24" /><ProfilePhoto user={rejecting.user} className="h-24 w-24" />
           </div>
         )}
-        <p className="mb-3 text-sm text-slate-500">Their check-in is removed from attendance and they're notified.</p>
+        <p className="mb-3 text-sm text-slate-500">{rejecting?.direction === 'out'
+          ? "Their check-out is undone, so the time doesn't count until they check out properly or you correct it on the Attendance page. They're notified."
+          : "Their check-in is removed from attendance and they're notified."}</p>
         <Field label="Reason (shown to the staff member)">
           <textarea rows={3} className="input" placeholder="e.g. The selfie isn't you. Please see HR." value={reason} onChange={(e) => setReason(e.target.value)} />
         </Field>

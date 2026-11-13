@@ -3,14 +3,11 @@ import { Link } from 'react-router-dom';
 import {
   AlertTriangle, ArrowUpRight, ChevronLeft, ChevronRight, Loader2, LogOut, QrCode,
 } from 'lucide-react';
-import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
-import { useConfirm } from '../../components/Confirm';
-import api, { toastError } from '../../lib/api';
 import useFetch from '../../lib/useFetch';
-import { Button, Field, Spinner } from '../../components/ui';
+import { Button, Spinner } from '../../components/ui';
 import { useMounted } from '../../lib/motion';
-import { fmtDate, fmtMinutes, fmtTime, titleCase, ymd } from '../../lib/format';
+import { fmtDate, fmtTime, titleCase, ymd } from '../../lib/format';
 import { Term } from '../../components/InfoTip';
 
 const DAY_MS = 86400000;
@@ -62,10 +59,7 @@ function ProgressPill({ label, value, fill, to }) {
 // ---------- Cards ----------
 // Ring timer: time on duty against the shift length; check in/out from here.
 export function ClockCard() {
-  const { data: status, reload, loading } = useFetch('/attendance/status');
-  const [busy, setBusy] = useState(false);
-  const [note, setNote] = useState('');
-  const ask = useConfirm();
+  const { data: status, loading } = useFetch('/attendance/status');
   const now = useNow();
   const ready = useMounted(); // ring starts empty, then sweeps to the real value
 
@@ -94,22 +88,6 @@ export function ClockCard() {
   const R = 64;
   const C = 2 * Math.PI * R;
 
-  const checkOut = async () => {
-    const early = shift && now < new Date(shift.endAt);
-    if (!(await ask({
-      title: 'Check out now?',
-      message: early ? `Your shift runs until ${shift.endTime}. Checking out now will be recorded as leaving early.` : 'This ends your shift for today.',
-      confirmLabel: 'Check out',
-    }))) return;
-    setBusy(true);
-    try {
-      const { data } = await api.post('/attendance/clock-out', { note });
-      toast.success(`Checked out. ${fmtMinutes(data.workedMinutes)} worked`);
-      setNote('');
-      reload();
-    } catch (e) { toastError(e); } finally { setBusy(false); }
-  };
-
   return (
     <Panel className="flex flex-col">
       <PanelTitle to="/check-in" label="Open check-in">Shift timer</PanelTitle>
@@ -126,10 +104,11 @@ export function ClockCard() {
       </div>
       <div className="mt-auto space-y-2 pt-2">
         {open ? (
-          <>
-            <Field label="Handover note (optional)"><input className="input" value={note} onChange={(e) => setNote(e.target.value)} /></Field>
-            <Button variant="danger" className="w-full" loading={busy} onClick={checkOut}><LogOut className="h-4 w-4" /> Check out</Button>
-          </>
+          // Leaving works like arriving: scan the entrance QR code, then a selfie.
+          <Link to="/check-in" className="block">
+            <Button variant="danger" className="w-full"><LogOut className="h-4 w-4" /> Check out</Button>
+            {shift && now < new Date(shift.endAt) && <span className="mt-1 block text-center text-xs text-slate-500">Your shift runs until {shift.endTime}</span>}
+          </Link>
         ) : (
           <Link to="/check-in" className="block">
             <Button variant={pending ? 'secondary' : 'primary'} className="w-full">

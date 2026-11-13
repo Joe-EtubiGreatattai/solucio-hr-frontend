@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Plus, Send, Trash2, Undo2 } from 'lucide-react';
+import { ArrowLeft, FileDown, Plus, Send, Trash2, Undo2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api, { toastError } from '../../lib/api';
 import useFetch from '../../lib/useFetch';
@@ -13,6 +13,7 @@ import { SHIFT_COLORS } from '../staff/MyRoster';
 import { Term } from '../../components/InfoTip';
 import CoverageGaps from '../../components/CoverageGaps';
 import StaffingRules from '../../components/StaffingRules';
+import { downloadRosterPdf } from '../../lib/rosterPdf';
 
 function datesBetween(from, to) {
   const out = [];
@@ -120,6 +121,16 @@ export default function RosterDetail() {
   const focusTimer = useRef();
   const undo = useUndoDelete();
   const ask = useConfirm();
+  const [printing, setPrinting] = useState(false);
+
+  // The roster as a printable PDF, with approved leave highlighted in the OFF columns.
+  const downloadPdf = async () => {
+    setPrinting(true);
+    try {
+      const { data: leave } = await api.get('/requests', { params: { status: 'approved', type: 'leave' } });
+      await downloadRosterPdf(data.roster, undo.visible(data.shifts), leave);
+    } catch (e) { toastError(e); } finally { setPrinting(false); }
+  };
 
   const rows = useMemo(() => {
     if (!data) return [];
@@ -193,6 +204,7 @@ export default function RosterDetail() {
         title={<span className="flex items-center gap-3">{roster.title} <Badge status={roster.status} /></span>}
         subtitle={`${fmtDate(roster.startDate)} – ${fmtDate(roster.endDate)} · ${roster.department || 'All departments'} · ${shifts.length} shifts, ${rows.length} staff`}
         actions={<>
+          <Button variant="secondary" loading={printing} disabled={!shifts.length} onClick={downloadPdf}><FileDown className="h-4 w-4" /> Download PDF</Button>
           <Button variant="secondary" onClick={() => setAssign({})}><Plus className="h-4 w-4" /> Assign shifts</Button>
           <Button variant={roster.status === 'published' ? 'secondary' : 'primary'} onClick={togglePublish}>
             {roster.status === 'published' ? <><Undo2 className="h-4 w-4" /> Unpublish</> : <><Send className="h-4 w-4" /> Publish to staff</>}

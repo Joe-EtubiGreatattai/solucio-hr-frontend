@@ -12,6 +12,7 @@ import { useConfirm } from '../../components/Confirm';
 import { Term } from '../../components/InfoTip';
 import LeaveImpact from '../../components/LeaveImpact';
 import SwapQueue from '../../components/SwapQueue';
+import { BankChangeQueue } from '../../components/BankAccount';
 
 export default function AdminRequests() {
   const [params, setParams] = useSearchParams();
@@ -26,6 +27,8 @@ export default function AdminRequests() {
   const mine = useRef(new Set()); // requests this admin just acted on
   const previous = useRef(null);
   const filterKey = `${status}|${type}`;
+  const { data: bankPending } = useFetch('/bank-changes', { params: { status: 'pending' }, initial: [] });
+  const pendingBank = bankPending.length;
 
   // When a live refresh removes requests someone else handled, say so instead of letting them silently vanish.
   useEffect(() => {
@@ -74,11 +77,12 @@ export default function AdminRequests() {
   return (
     <div>
       <PageHeader title="Requests" subtitle="Leave, loans, advances, shift swaps and other staff applications" />
-      <Tabs value={params.get('tab') === 'swaps' ? 'swaps' : status} onChange={(v) => (v === 'swaps' ? setParams({ tab: 'swaps' }) : setParams({ status: v }))} tabs={[
+      <Tabs value={['swaps', 'bank'].includes(params.get('tab')) ? params.get('tab') : status} onChange={(v) => (['swaps', 'bank'].includes(v) ? setParams({ tab: v }) : setParams({ status: v }))} tabs={[
         { value: 'pending', label: 'Pending' }, { value: 'approved', label: 'Approved' }, { value: 'rejected', label: 'Rejected' },
         { value: 'cancelled', label: 'Cancelled' }, { value: '', label: 'All' }, { value: 'swaps', label: 'Shift swaps' },
+        { value: 'bank', label: pendingBank ? `Bank changes (${pendingBank})` : 'Bank changes' },
       ]} />
-      {params.get('tab') === 'swaps' ? <SwapQueue /> : <>
+      {params.get('tab') === 'bank' ? <BankChangeQueue /> : params.get('tab') === 'swaps' ? <SwapQueue /> : <>
       <div className="mb-4 flex flex-wrap gap-1.5">
         {[{ value: '', label: 'All types' }, ...REQUEST_TYPES].map((t) => (
           <button key={t.value} onClick={() => set('type', t.value)}

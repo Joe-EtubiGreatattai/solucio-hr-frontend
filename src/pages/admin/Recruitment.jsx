@@ -20,7 +20,7 @@ export function OpeningEditor({ opening, prefillPosition, onClose, onSaved }) {
   const { data: positions } = useFetch('/org/positions', { initial: [] });
   const { data: grades } = useFetch('/org/grades', { initial: [] });
   const { data: people } = useFetch('/users/directory', { initial: [] });
-  const blank = { title: '', position: prefillPosition || '', department: '', grade: '', openings: 1, reason: 'vacancy', employmentType: 'full_time', location: 'Solucio Hospital, Lagos',
+  const blank = { title: '', position: prefillPosition || '', department: '', grade: '', openings: 1, reason: 'vacancy', employmentType: 'full_time', location: 'Solucio Hospital',
     summary: '', description: '', responsibilities: [], requirements: [], salaryMin: '', salaryMax: '', showSalary: false, visibility: 'both', closingDate: '', hiringManager: '', panel: [] };
   const [form, setForm] = useState(() => opening ? { ...blank, ...opening, position: idOf(opening.position), grade: idOf(opening.grade), hiringManager: idOf(opening.hiringManager),
     panel: (opening.panel || []).map(idOf), closingDate: opening.closingDate ? ymd(opening.closingDate) : '' } : blank);
@@ -102,6 +102,7 @@ export default function Recruitment() {
   const [status, setStatus] = useState('open');
   const { data: openings, loading, reload } = useFetch('/recruitment/openings', { initial: [] });
   const { data: stats } = useFetch('/recruitment/stats');
+  const { data: careerStats } = useFetch('/recruitment/careers/stats');
   const [editing, setEditing] = useState(params.get('position') ? { prefill: params.get('position') } : null);
   const shown = status === 'all' ? openings : openings.filter((o) => o.status === status);
 
@@ -109,8 +110,10 @@ export default function Recruitment() {
     <div>
       <PageHeader title="Recruitment" subtitle="Requisitions, the careers page and every candidate from application to hire."
         actions={<><a href="/careers" target="_blank" rel="noreferrer"><Button variant="secondary"><ExternalLink className="h-4 w-4" /> Careers page</Button></a>
+          <a href="/admin/organisation?tab=grades"><Button variant="secondary">Grades</Button></a>
           <Button onClick={() => setEditing({})}><Plus className="h-4 w-4" /> New opening</Button></>} />
       <EmailStatusNote className="mb-4" />
+      {careerStats && <div className="mb-5 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-2xl border border-brand-100 bg-brand-50/70 px-5 py-3 text-sm"><span className="font-semibold text-brand-900">Careers page visits</span><span className="text-slate-600">{careerStats.last30Days.toLocaleString()} in the last 30 days</span><span className="text-slate-500">{careerStats.total.toLocaleString()} total</span></div>}
 
       {stats && (
         <div className="stagger mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">

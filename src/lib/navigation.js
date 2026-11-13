@@ -18,6 +18,7 @@ export const ADMIN_NAV = [
   ] },
   { title: 'Hiring', items: [
     { to: '/admin/recruitment', label: 'Recruitment', icon: Briefcase, badge: 'applicants' },
+    { to: '/admin/organisation?tab=grades', label: 'Grades', icon: Award },
     { to: '/admin/onboarding', label: 'Onboarding', icon: ClipboardList },
   ] },
   { title: 'Development', items: [
@@ -74,7 +75,7 @@ export const STAFF_NAV_MORE = [
   { to: '/surveys', label: 'Surveys', icon: MessagesSquare },
   { to: '/relations', label: 'My cases', icon: Scale },
   { to: '/anonymous', label: 'Speak up (anonymous)', icon: MessageSquareWarning },
-  { to: '/leaving', label: 'Leaving', icon: DoorOpen },
+  { to: '/leaving', label: 'Leaving / disengaged', icon: DoorOpen },
 ];
 
 // Phones: the bottom tab bar. Check in sits in the middle, where the thumb rests.

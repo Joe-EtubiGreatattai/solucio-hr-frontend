@@ -98,12 +98,12 @@ export default function Leaving() {
   const toggle = async (t) => { try { await api.put(`/engagement/leaving/tasks/${t._id}`, { done: !t.done }); reload(); } catch (e) { toastError(e); } };
   const withdraw = async () => { if (!(await ask({ title: 'Withdraw your resignation?', confirmLabel: 'Withdraw' }))) return; try { await api.post('/engagement/leaving/withdraw', {}); toast.success("Withdrawn. We're glad you're staying"); reload(); } catch (e) { toastError(e); } };
 
-  if (!exit) return <div><PageHeader title="Leaving Solucio" subtitle="Resign, and everything that happens before your last day." /><Resign onDone={reload} /></div>;
+  if (!exit) return <div><PageHeader title="Leaving / disengaged" subtitle="Resign, and everything that happens before your last day." /><Resign onDone={reload} /></div>;
   const daysLeft = Math.ceil((new Date(exit.lastDay) - Date.now()) / 86400000);
   const done = exit.checklist.filter((c) => c.done).length;
   return (
     <div>
-      <PageHeader title="Leaving Solucio" subtitle="Your last day, handover and exit interview." />
+      <PageHeader title="Leaving / disengaged" subtitle="Your last day, handover and exit interview." />
       <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="animate-fade-up rounded-3xl bg-gradient-to-br from-brand-900 via-brand-800 to-brand-600 p-6 text-white shadow-sm">
           <p className="flex items-center gap-2 text-sm text-brand-100"><CalendarDays className="h-4 w-4" /> Last working day</p>

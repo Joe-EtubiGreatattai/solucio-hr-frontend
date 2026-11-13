@@ -1,14 +1,16 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Briefcase, CalendarClock, MapPin, Search } from 'lucide-react';
 import useFetch from '../../lib/useFetch';
 import { Badge, Empty, Spinner } from '../../components/ui';
 import { fmtDate, fmtMoney, titleCase } from '../../lib/format';
+import api from '../../lib/api';
 
 export const employmentLabel = (t) => ({ full_time: 'Full-time', part_time: 'Part-time', contract: 'Contract', locum: 'Locum', intern: 'Internship' }[t] || titleCase(t));
 
 export default function Careers() {
   const { data: jobs, loading } = useFetch('/careers/jobs', { initial: [], live: false });
+  useEffect(() => { api.post('/careers/visit', { page: 'listing' }, { anonymous: true }).catch(() => {}); }, []);
   const [q, setQ] = useState('');
   const [dept, setDept] = useState('');
   const departments = useMemo(() => [...new Set(jobs.map((j) => j.department))].sort(), [jobs]);
@@ -16,9 +18,11 @@ export default function Careers() {
 
   return (
     <div>
-      <section className="rounded-3xl bg-gradient-to-br from-brand-900 via-brand-800 to-brand-600 px-6 py-10 text-white shadow-sm sm:px-10 sm:py-14">
-        <h1 className="max-w-2xl text-3xl font-semibold tracking-tight sm:text-5xl">Care for Lagos with us.</h1>
-        <p className="mt-3 max-w-xl text-brand-100">Join our doctors, nurses, scientists and support teams delivering compassionate care around the clock.</p>
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-brand-900 to-brand-700 px-6 py-10 text-white shadow-sm sm:px-10 sm:py-14">
+        <div className="pointer-events-none absolute -right-12 -top-20 h-72 w-72 rounded-full border-[48px] border-white/5" />
+        <p className="text-xs font-semibold uppercase tracking-[.22em] text-brand-100">Careers at Solucio</p>
+        <h1 className="mt-3 max-w-2xl text-3xl font-semibold tracking-tight sm:text-5xl">Do work that matters.</h1>
+        <p className="mt-3 max-w-xl text-brand-100">Join our doctors, nurses, scientists and support teams delivering compassionate care.</p>
         <div className="mt-6 flex max-w-xl flex-col gap-2 sm:flex-row">
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />

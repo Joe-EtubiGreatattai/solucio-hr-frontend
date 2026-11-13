@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Briefcase, CalendarClock, Copy, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -12,8 +12,10 @@ import { Term } from '../../components/InfoTip';
 export default function CareerJob() {
   const { id } = useParams();
   const { data: job, loading } = useFetch(`/careers/jobs/${id}`, { live: false });
+  useEffect(() => { if (id) api.post('/careers/visit', { page: 'job', job: id }, { anonymous: true }).catch(() => {}); }, [id]);
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '', location: '', currentEmployer: '', yearsExperience: '', coverLetter: '' });
   const [cv, setCv] = useState(null);
+  const [certificates, setCertificates] = useState([]);
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -30,6 +32,7 @@ export default function CareerJob() {
       const fd = new FormData();
       Object.entries(form).forEach(([k, v]) => v && fd.append(k, v));
       if (cv) fd.append('cv', cv);
+      certificates.forEach((file) => fd.append('certificates', file));
       fd.append('consent', String(consent));
       const { data } = await api.post(`/careers/jobs/${id}/apply`, fd, { anonymous: true });
       setCode(data.trackingCode);
@@ -82,7 +85,8 @@ export default function CareerJob() {
           </div>
           <Field label="Current employer"><input className="input" value={form.currentEmployer} onChange={set('currentEmployer')} /></Field>
           <Field label="CV (PDF or Word)"><input type="file" required accept=".pdf,.doc,.docx" className="input" onChange={(e) => setCv(e.target.files[0])} /></Field>
-          <Field label="Why this role? (optional)"><textarea rows={4} className="input" value={form.coverLetter} onChange={set('coverLetter')} /></Field>
+          <Field label="Relevant certificates (optional, up to 10)"><input type="file" multiple accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" className="input" onChange={(e) => setCertificates(Array.from(e.target.files || []).slice(0, 10))} />{certificates.length > 0 && <span className="mt-1 block text-xs text-slate-500">{certificates.length} file(s) selected</span>}</Field>
+          <Field label="Cover letter / application (optional)" hint="Tell us why you are applying and what you would bring to the role."><textarea rows={4} className="input" value={form.coverLetter} onChange={set('coverLetter')} /></Field>
           <label className="flex items-start gap-3 text-sm text-slate-600">
             <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0 accent-brand-700" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
             <span>I agree to Solucio Hospital processing my details to assess this application, in line with the Nigeria Data Protection Act 2023.</span>

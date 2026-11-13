@@ -6,6 +6,7 @@ import api, { toastError } from '../../lib/api';
 import { Avatar, Button, Card, Field, IconButton, PageHeader, PasswordInput, ProgressBar } from '../../components/ui';
 import { fmtDate, titleCase, ymd } from '../../lib/format';
 import EmailPrefs from '../../components/EmailPrefs';
+import BankAccountCard from '../../components/BankAccount';
 
 export default function Profile() {
   const { user, setUser } = useAuth();
@@ -14,7 +15,6 @@ export default function Profile() {
     dateOfBirth: user.dateOfBirth ? ymd(user.dateOfBirth) : '', address: user.address || '',
     qualifications: user.qualifications || '', bio: user.bio || '',
     emergencyContact: { name: '', relationship: '', phone: '', ...user.emergencyContact },
-    bankDetails: { bankName: '', accountName: '', accountNumber: '', ...user.bankDetails },
     skills: (user.skills || []).map(({ name, level }) => ({ name, level })),
   });
   const LEVELS = ['', 'Beginner', 'Developing', 'Competent', 'Proficient', 'Expert'];
@@ -104,7 +104,8 @@ export default function Profile() {
           </Card>
         </div>
 
-        <form onSubmit={save} className="space-y-6 lg:col-span-2">
+        <div className="space-y-6 lg:col-span-2">
+        <form onSubmit={save} className="space-y-6">
           <Card title="Personal information">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="First name"><input className="input" required value={form.firstName} onChange={set('firstName')} /></Field>
@@ -145,15 +146,11 @@ export default function Profile() {
               <Field label="Phone"><input className="input" value={form.emergencyContact.phone} onChange={setNested('emergencyContact', 'phone')} /></Field>
             </div>
           </Card>
-          <Card title="Bank details" action={<span className="text-xs text-slate-500">Used for salary and approved loans</span>}>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <Field label="Bank"><input className="input" value={form.bankDetails.bankName} onChange={setNested('bankDetails', 'bankName')} /></Field>
-              <Field label="Account name"><input className="input" value={form.bankDetails.accountName} onChange={setNested('bankDetails', 'accountName')} /></Field>
-              <Field label="Account number"><input className="input" value={form.bankDetails.accountNumber} onChange={setNested('bankDetails', 'accountNumber')} /></Field>
-            </div>
-          </Card>
           <div className="flex justify-end"><Button size="lg" loading={busy}>Save profile</Button></div>
         </form>
+        {/* Outside the profile form: changing the salary account is its own checked, approved step */}
+        <BankAccountCard user={user} />
+        </div>
       </div>
     </div>
   );

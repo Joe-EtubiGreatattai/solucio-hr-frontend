@@ -10,6 +10,7 @@ const LIVE_DEPENDENCIES = {
   certificates: ['certificates', 'users'],
   requests: ['requests', 'users'],
   notes: ['notes', 'users'],
+  'bank-changes': ['requests', 'users'],
 };
 
 function liveResourcesFor(url) {

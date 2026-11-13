@@ -15,6 +15,7 @@ const blank = {
   firstName: '', lastName: '', email: '', password: '', role: 'staff', department: '', jobTitle: '',
   employmentType: 'full_time', phone: '', dateJoined: ymd(), status: 'active', leaveBalance: 21,
   position: '', grade: '', manager: '', probationEndDate: '', contractEndDate: '', plannedExitDate: '',
+  payrollAccess: false,
 };
 
 const idOf = (v) => (v && typeof v === 'object' ? v._id : v || '');
@@ -110,6 +111,11 @@ export function StaffFormModal({ open, onClose, staff, onSaved }) {
             <option value="staff">Staff</option><option value="admin">Admin</option>
           </select>
         </Field>
+        <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-slate-50 p-3 sm:col-span-2">
+          <input type="checkbox" className="mt-1 h-4 w-4 accent-brand-700" checked={!!form.payrollAccess} onChange={(e) => setForm({ ...form, payrollAccess: e.target.checked })} />
+          <span className="text-sm"><span className="font-semibold text-slate-800">Payroll access</span><br />
+            <span className="text-slate-500">Can sign in to Solucio Payroll with this account and send salaries, and gets payroll emails. Give it only to the people who run payroll.</span></span>
+        </label>
         <Field label="Date joined"><input type="date" className="input" value={form.dateJoined} onChange={set('dateJoined')} /></Field>
         <Field label="Status">
           <select className="input" value={form.status} onChange={set('status')}>
@@ -187,7 +193,7 @@ export default function StaffList() {
                     </td>
                     <td className="whitespace-nowrap font-mono text-xs">{s.staffId}</td>
                     <td>{s.department || '—'}</td>
-                    <td>{s.jobTitle || '—'}{s.role === 'admin' && <span className="ml-1"><Badge color="purple">Admin</Badge></span>}</td>
+                    <td>{s.jobTitle || '—'}{s.role === 'admin' && <span className="ml-1"><Badge color="purple">Admin</Badge></span>}{s.payrollAccess && <span className="ml-1"><Badge color="teal">Payroll</Badge></span>}</td>
                     <td>{fmtDate(s.dateJoined)}</td>
                     <td><span className={s.profileCompletion < 60 ? 'text-amber-600' : 'text-slate-600'}>{s.profileCompletion}%</span></td>
                     <td><Badge status={s.status} /></td>

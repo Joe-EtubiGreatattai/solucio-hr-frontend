@@ -87,7 +87,8 @@ export default function Pay() {
           {slips.length === 0 ? <Empty title="No payslips yet">They appear once HR approves the month's payroll.</Empty> : (
             <ul className="stagger divide-y divide-slate-100">{slips.map((s) => (
               <li key={s._id} className="flex flex-wrap items-center gap-3 px-5 py-3">
-                <button className="min-w-40 flex-1 text-left" onClick={() => open(s._id)}><span className="block font-medium">{periodLabel(s.period)}</span><span className="text-xs text-slate-500">Gross {fmtMoney(s.gross)} · tax {fmtMoney(s.paye)}</span></button>
+                <button className="min-w-40 flex-1 text-left" onClick={() => open(s._id)}><span className="block font-medium">{periodLabel(s.period)}</span><span className="text-xs text-slate-500">Gross {fmtMoney(s.gross)} · tax {fmtMoney(s.paye)}</span>
+                  {s.payment?.paidAt && <span className="mt-0.5 block text-xs font-medium text-emerald-700">{s.payment.test ? 'Test payment' : 'Paid'} {fmtDate(s.payment.paidAt)}{s.payment.accountLast4 && ` · ${s.payment.bankName || 'bank'} •••• ${s.payment.accountLast4}`}</span>}</button>
                 <span className="font-semibold">{fmtMoney(s.net)}</span>
                 <IconButton icon={FileDown} label={`Download ${periodLabel(s.period)} payslip`} onClick={() => pdf(s._id)} />
               </li>

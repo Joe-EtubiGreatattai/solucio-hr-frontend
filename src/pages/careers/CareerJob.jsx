@@ -23,7 +23,7 @@ export default function CareerJob() {
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
   if (loading) return <Spinner />;
-  if (!job) return <div className="card"><Empty title="This role is no longer open"><Link className="font-semibold text-brand-700" to="/careers">See all open roles</Link></Empty></div>;
+  if (!job) return <div className="flex flex-1 items-center justify-center"><Empty title="This role is no longer open"><Link className="font-semibold text-brand-700" to="/careers">See all open roles</Link></Empty></div>;
 
   const apply = async (e) => {
     e.preventDefault();
@@ -41,7 +41,7 @@ export default function CareerJob() {
   };
 
   if (code) return (
-    <div className="card mx-auto max-w-lg animate-fade-up p-8 text-center">
+    <div className="flex flex-1 items-center justify-center px-4 py-12"><div className="w-full max-w-lg animate-fade-up text-center">
       <SuccessCheck className="h-16 w-16" />
       <h1 className="mt-4 text-2xl font-semibold">Application sent</h1>
       <p className="mt-2 text-slate-600">Thank you for applying for <b>{job.title}</b>. Keep this reference to check your application's progress:</p>
@@ -50,15 +50,16 @@ export default function CareerJob() {
         <button type="button" aria-label="Copy reference" className="flex h-10 w-10 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100" onClick={() => { navigator.clipboard.writeText(code); toast.success('Copied'); }}><Copy className="h-5 w-5" /></button>
       </div>
       <div className="mt-6 flex flex-wrap justify-center gap-2"><Link to={`/careers/status?code=${code}`}><Button variant="secondary">Check status</Button></Link><Link to="/careers"><Button>More roles</Button></Link></div>
-    </div>
+    </div></div>
   );
 
   return (
-    <div>
-      <Link to="/careers" className="mb-2 inline-flex min-h-10 items-center gap-1 text-sm text-slate-500 hover:text-brand-700"><ArrowLeft className="h-4 w-4" /> All roles</Link>
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-        <article className="card p-6 lg:col-span-3">
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{job.title}</h1>
+    // Desktop: the role on the left, the application form in a full-height panel on the right.
+    <div className="grid flex-1 grid-cols-1 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+        <article className="px-4 py-8 sm:px-8 lg:px-12 lg:py-12">
+          <Link to="/careers" className="mb-4 inline-flex min-h-10 items-center gap-1 text-sm text-slate-500 hover:text-brand-700"><ArrowLeft className="h-4 w-4" /> All roles</Link>
+          <div className="max-w-3xl">
+          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{job.title}</h1>
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500">
             <span className="flex items-center gap-1"><Briefcase className="h-4 w-4" />{job.department} · {employmentLabel(job.employmentType)}</span>
             <span className="flex items-center gap-1"><MapPin className="h-4 w-4" />{job.location}</span>
@@ -69,9 +70,11 @@ export default function CareerJob() {
           {job.description && <p className="mt-4 whitespace-pre-wrap leading-relaxed text-slate-700">{job.description}</p>}
           {job.responsibilities?.length > 0 && <><h2 className="mt-6 font-semibold"><Term>What you'll do</Term></h2><ul className="mt-2 list-disc space-y-1 pl-5 text-slate-700">{job.responsibilities.map((r) => <li key={r}>{r}</li>)}</ul></>}
           {job.requirements?.length > 0 && <><h2 className="mt-6 font-semibold"><Term>What you'll need</Term></h2><ul className="mt-2 list-disc space-y-1 pl-5 text-slate-700">{job.requirements.map((r) => <li key={r}>{r}</li>)}</ul></>}
+          </div>
         </article>
 
-        <form onSubmit={apply} className="card h-fit space-y-4 p-6 lg:sticky lg:top-6 lg:col-span-2">
+        <div className="border-t border-slate-100 bg-slate-50 lg:border-l lg:border-t-0">
+        <form onSubmit={apply} className="space-y-4 px-4 py-8 sm:px-8 lg:sticky lg:top-0 lg:px-10 lg:py-12">
           <h2 className="text-lg font-semibold"><Term>Apply for this role</Term></h2>
           <div className="grid grid-cols-2 gap-3">
             <Field label="First name"><input className="input" required autoComplete="given-name" value={form.firstName} onChange={set('firstName')} /></Field>
@@ -94,7 +97,7 @@ export default function CareerJob() {
           {error && <p key={error} role="alert" className="animate-shake rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
           <Button className="w-full" size="lg" loading={busy} disabled={!consent}>Submit application</Button>
         </form>
-      </div>
+        </div>
     </div>
   );
 }

@@ -24,16 +24,17 @@ export default function CareerStatus() {
 
   const stepIndex = result ? STEPS.indexOf(result.stage) : -1;
   return (
-    <div className="mx-auto max-w-xl">
-      <h1 className="text-3xl font-semibold tracking-tight">Check your application</h1>
+    <div className="flex flex-1 justify-center px-4 py-10 sm:px-8 lg:py-20">
+      <div className="w-full max-w-2xl">
+      <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Check your application</h1>
       <p className="mt-1 text-slate-600">Enter the reference you received when you applied.</p>
-      <form onSubmit={lookup} className="card mt-6 flex flex-col gap-3 p-5 sm:flex-row sm:items-end">
+      <form onSubmit={lookup} className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-end">
         <Field label="Reference" className="flex-1"><input className="input font-mono uppercase tracking-widest" required value={code} onChange={(e) => setCode(e.target.value)} /></Field>
         <Button loading={busy}><Search className="h-4 w-4" /> Check</Button>
       </form>
       {error && <p key={error} role="alert" className="mt-4 animate-shake rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
       {result && (
-        <div className="card mt-4 animate-fade-up p-6">
+        <div className="mt-8 animate-fade-up border-t border-slate-100 pt-8">
           <p className="text-sm text-slate-500">Hi {result.name}, your application for</p>
           <p className="text-xl font-semibold">{result.job}</p>
           <p className="mt-1 text-sm text-slate-500">Applied {fmtDate(result.appliedAt)}</p>
@@ -54,6 +55,7 @@ export default function CareerStatus() {
           )}
         </div>
       )}
+      </div>
     </div>
   );
 }

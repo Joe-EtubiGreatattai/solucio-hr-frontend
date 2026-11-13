@@ -20,7 +20,7 @@ export function OpeningEditor({ opening, prefillPosition, onClose, onSaved }) {
   const { data: positions } = useFetch('/org/positions', { initial: [] });
   const { data: grades } = useFetch('/org/grades', { initial: [] });
   const { data: people } = useFetch('/users/directory', { initial: [] });
-  const blank = { title: '', position: prefillPosition || '', department: '', grade: '', openings: 1, reason: 'vacancy', employmentType: 'full_time', location: 'Solucio Hospital',
+  const blank = { title: '', position: prefillPosition || '', department: '', grade: '', openings: 1, reason: 'vacancy', employmentType: 'full_time', location: 'Solucio Hospital, Lokoja',
     summary: '', description: '', responsibilities: [], requirements: [], salaryMin: '', salaryMax: '', showSalary: false, visibility: 'both', closingDate: '', hiringManager: '', panel: [] };
   const [form, setForm] = useState(() => opening ? { ...blank, ...opening, position: idOf(opening.position), grade: idOf(opening.grade), hiringManager: idOf(opening.hiringManager),
     panel: (opening.panel || []).map(idOf), closingDate: opening.closingDate ? ymd(opening.closingDate) : '' } : blank);

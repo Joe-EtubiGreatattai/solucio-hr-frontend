@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ACCESS_LABEL, accessOf } from '../../lib/access';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { Bar, BarChart, CartesianGrid, LabelList, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { ArrowLeft, Award, Bell, FileText, KeyRound, Mail, Pencil, Printer } from 'lucide-react';
@@ -57,7 +58,7 @@ export default function StaffReport() {
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-bold">{fullName(user)}</h1>
             <Badge status={user.status} />
-            {user.role === 'admin' && <Badge color="purple">Admin</Badge>}
+            {accessOf(user) !== 'staff' && <Badge color="purple">{ACCESS_LABEL[accessOf(user)]}</Badge>}
           </div>
           <p className="text-slate-500">{user.jobTitle || '—'} · {user.department || '—'} · {titleCase(user.employmentType)}</p>
           <p className="mt-1 text-sm text-slate-500">

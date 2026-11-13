@@ -72,6 +72,9 @@ function NavGroup({ group, badges }) {
 }
 
 function Sidebar({ badges, onLogout }) {
+  const { can } = useAuth();
+  // Only the parts of the portal this admin's access level covers.
+  const groups = ADMIN_NAV.map((g) => ({ ...g, items: g.items.filter((i) => can(i.area || 'hr')) })).filter((g) => g.items.length);
   return (
     <div className="flex h-full flex-col rounded-3xl bg-slate-100/80 px-3 py-6">
       <Link to="/admin" className="mb-8 flex items-center gap-2.5 px-4">
@@ -79,7 +82,7 @@ function Sidebar({ badges, onLogout }) {
         <span className="text-xl font-semibold tracking-tight">Solucio HR</span>
       </Link>
       <nav aria-label="Admin" className="-mx-1 flex-1 overflow-y-auto overscroll-contain px-1">
-        {ADMIN_NAV.map((g) => <NavGroup key={g.title} group={g} badges={badges} />)}
+        {groups.map((g) => <NavGroup key={g.title} group={g} badges={badges} />)}
         <p className="mb-2 mt-5 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">General</p>
         <div className="space-y-0.5">
           <NavItem item={{ to: '/', label: 'My staff portal', icon: UserRound, end: true }} />

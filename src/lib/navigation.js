@@ -1,11 +1,12 @@
 import {
   Award, Banknote, BarChart3, Briefcase, HeartHandshake, Scale, Building2, ClipboardList, GraduationCap, Target, CalendarRange, ClipboardCheck, FileCheck2, History, Inbox, LayoutDashboard, Megaphone,
-  MessageSquareWarning, NotebookPen, QrCode, ShieldCheck, TrendingUp, Users,
+  KeyRound, MessageSquareWarning, NotebookPen, QrCode, ShieldCheck, TrendingUp, Users,
   BookOpen, CalendarCheck, DoorOpen, Home, Mail, MessagesSquare, Rocket, Search,
 } from 'lucide-react';
 
 // Admin sidebar, grouped by HR function. Each module adds its entries here.
-// `badge` keys come from GET /reports/badges.
+// `badge` keys come from GET /reports/badges. `area` limits an item to some access levels (lib/access.js);
+// items without one are for every admin.
 export const ADMIN_NAV = [
   { title: 'Overview', items: [
     { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -15,6 +16,7 @@ export const ADMIN_NAV = [
     { to: '/admin/staff', label: 'Staff', icon: Users },
     { to: '/admin/organisation', label: 'Organisation', icon: Building2 },
     { to: '/admin/workforce', label: 'Workforce plan', icon: TrendingUp },
+    { to: '/admin/access', label: 'Admin access', icon: KeyRound, area: 'admins' },
   ] },
   { title: 'Hiring', items: [
     { to: '/admin/recruitment', label: 'Recruitment', icon: Briefcase, badge: 'applicants' },
@@ -26,7 +28,7 @@ export const ADMIN_NAV = [
     { to: '/admin/performance', label: 'Performance', icon: Target, badge: 'calibration' },
   ] },
   { title: 'Pay & benefits', items: [
-    { to: '/admin/payroll', label: 'Payroll', icon: Banknote },
+    { to: '/admin/payroll', label: 'Payroll', icon: Banknote, area: 'pay' },
   ] },
   { title: 'Time & attendance', items: [
     { to: '/admin/rosters', label: 'Rosters', icon: CalendarRange },
@@ -36,18 +38,18 @@ export const ADMIN_NAV = [
   ] },
   { title: 'Engagement & relations', items: [
     { to: '/admin/engagement', label: 'Engagement', icon: HeartHandshake, badge: 'exits' },
-    { to: '/admin/relations', label: 'Cases', icon: Scale, badge: 'relations' },
+    { to: '/admin/relations', label: 'Cases', icon: Scale, badge: 'relations', area: 'cases' },
   ] },
   { title: 'Communication', items: [
     { to: '/admin/announcements', label: 'Announcements', icon: Megaphone },
     { to: '/admin/notes', label: 'Staff reports', icon: NotebookPen, badge: 'notes' },
-    { to: '/admin/anonymous', label: 'Anonymous', icon: MessageSquareWarning, badge: 'anonymous' },
+    { to: '/admin/anonymous', label: 'Anonymous', icon: MessageSquareWarning, badge: 'anonymous', area: 'cases' },
   ] },
   { title: 'Policies & compliance', items: [
     { to: '/admin/compliance', label: 'Compliance', icon: ShieldCheck },
     { to: '/admin/policies', label: 'Policies', icon: FileCheck2 },
     { to: '/admin/certificates', label: 'Certificates', icon: Award, badge: 'certificates' },
-    { to: '/admin/audit', label: 'Audit trail', icon: History },
+    { to: '/admin/audit', label: 'Audit trail', icon: History, area: 'audit' },
   ] },
 ];
 
@@ -62,6 +64,7 @@ export const STAFF_NAV_MAIN = [
 ];
 
 export const STAFF_NAV_MORE = [
+  { to: '/desk', label: 'Check-in desk', icon: QrCode, frontDeskOnly: true },
   { to: '/onboarding', label: 'My onboarding', icon: Rocket, onboardingOnly: true },
   { to: '/pay', label: 'My pay', icon: Banknote },
   { to: '/certificates', label: 'Certificates', icon: Award },

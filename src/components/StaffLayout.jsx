@@ -132,7 +132,7 @@ function MoreSheet({ open, onClose, items }) {
 
 // Staff portal shell: no sidebar, a pill navigation bar on top, soft brand-tinted background.
 export default function StaffLayout() {
-  const { setUser, isAdmin } = useAuth();
+  const { setUser, isAdmin, access } = useAuth();
   // Keep the signed-in profile (leave balance, role, status) current when an admin changes it.
   useLive(['users', 'requests'], () => api.get('/auth/me').then((r) => setUser(r.data)).catch(() => {}));
   const [menuOpen, setMenuOpen] = useState(false);
@@ -143,7 +143,9 @@ export default function StaffLayout() {
   // Interview panellists and people onboarding get their extra pages too.
   const { data: panel } = useFetch('/recruitment/my-interviews', { initial: { interviews: [] } });
   const { data: onboarding } = useFetch('/onboarding/mine');
-  const more = STAFF_NAV_MORE.filter((i) => (!i.managersOnly || team.length > 0)
+  // Front desk staff get the check-in screen (admins reach it from the admin portal).
+  const more = STAFF_NAV_MORE.filter((i) => (!i.frontDeskOnly || access === 'front_desk')
+    && (!i.managersOnly || team.length > 0)
     && (!i.interviewersOnly || panel.interviews.length > 0)
     && (!i.onboardingOnly || onboarding?.status === 'active'));
   const tabPaths = STAFF_TABS.map((t) => t.to);

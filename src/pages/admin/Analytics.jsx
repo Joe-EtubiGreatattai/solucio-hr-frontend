@@ -137,7 +137,7 @@ export default function Analytics() {
         </div>
       </Section>
 
-      <Section title="Pay">
+      {pay && <Section title="Pay">
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-1">
             <Kpi label="Employer cost last payroll" value={fmtMoney(pay.lastMonthCost)} to="/admin/payroll" />
@@ -154,7 +154,7 @@ export default function Analytics() {
             </>
           ) : <Empty title="No approved payrolls yet" />}{pay.note && <p className="mt-2 text-xs text-slate-500">{pay.note}</p>}</Card>
         </div>
-      </Section>
+      </Section>}
 
       <Section title="Engagement, retention & relations">
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">

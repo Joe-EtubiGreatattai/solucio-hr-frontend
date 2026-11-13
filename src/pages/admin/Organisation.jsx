@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Pencil, Plus, Trash2, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -314,13 +315,15 @@ function HrRules() {
 
 export default function Organisation() {
   const [params, setParams] = useSearchParams();
-  const tab = params.get('tab') || 'departments';
+  const { can } = useAuth();
+  const rulesOk = can('settings'); // HR rules are system settings (super admins)
+  const tab = params.get('tab') === 'rules' && !rulesOk ? 'departments' : params.get('tab') || 'departments';
   return (
     <div>
       <PageHeader title="Organisation" subtitle="Departments, positions, pay grades and reporting lines: the structure everything else plans against." />
       <Tabs value={tab} onChange={(t) => setParams({ tab: t })} tabs={[
         { value: 'departments', label: 'Departments' }, { value: 'positions', label: 'Positions' }, { value: 'grades', label: 'Grades' },
-        { value: 'chart', label: 'Org chart' }, { value: 'rules', label: 'HR rules' },
+        { value: 'chart', label: 'Org chart' }, ...(rulesOk ? [{ value: 'rules', label: 'HR rules' }] : []),
       ]} />
       {tab === 'departments' && <Departments />}
       {tab === 'positions' && <Positions />}

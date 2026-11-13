@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Paperclip } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -27,7 +28,9 @@ export default function AdminRequests() {
   const mine = useRef(new Set()); // requests this admin just acted on
   const previous = useRef(null);
   const filterKey = `${status}|${type}`;
-  const { data: bankPending } = useFetch('/bank-changes', { params: { status: 'pending' }, initial: [] });
+  const { can } = useAuth();
+  const payOk = can('pay'); // bank account changes are pay data
+  const { data: bankPending } = useFetch(payOk ? '/bank-changes' : null, { params: { status: 'pending' }, initial: [] });
   const pendingBank = bankPending.length;
 
   // When a live refresh removes requests someone else handled, say so instead of letting them silently vanish.
@@ -80,9 +83,9 @@ export default function AdminRequests() {
       <Tabs value={['swaps', 'bank'].includes(params.get('tab')) ? params.get('tab') : status} onChange={(v) => (['swaps', 'bank'].includes(v) ? setParams({ tab: v }) : setParams({ status: v }))} tabs={[
         { value: 'pending', label: 'Pending' }, { value: 'approved', label: 'Approved' }, { value: 'rejected', label: 'Rejected' },
         { value: 'cancelled', label: 'Cancelled' }, { value: '', label: 'All' }, { value: 'swaps', label: 'Shift swaps' },
-        { value: 'bank', label: pendingBank ? `Bank changes (${pendingBank})` : 'Bank changes' },
+        ...(payOk ? [{ value: 'bank', label: pendingBank ? `Bank changes (${pendingBank})` : 'Bank changes' }] : []),
       ]} />
-      {params.get('tab') === 'bank' ? <BankChangeQueue /> : params.get('tab') === 'swaps' ? <SwapQueue /> : <>
+      {params.get('tab') === 'bank' && payOk ? <BankChangeQueue /> : params.get('tab') === 'swaps' ? <SwapQueue /> : <>
       <div className="mb-4 flex flex-wrap gap-1.5">
         {[{ value: '', label: 'All types' }, ...REQUEST_TYPES].map((t) => (
           <button key={t.value} onClick={() => set('type', t.value)}

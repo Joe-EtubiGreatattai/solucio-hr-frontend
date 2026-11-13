@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import { QRCodeSVG } from 'qrcode.react';
 import { Check, Crosshair, Expand, ImageOff, MapPin, RefreshCw, UserPlus, X } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -186,6 +187,7 @@ const RESULT = {
 };
 
 export default function CheckInDesk() {
+  const { can } = useAuth();
   const { data, reload } = useFetch('/attendance/check-in-requests', { initial: { review: [], recent: [], threshold: 0.5 } });
   const [busyId, setBusyId] = useState(null);
   const [manual, setManual] = useState(false);
@@ -235,7 +237,7 @@ export default function CheckInDesk() {
             <DeskQr />
             <p className="mt-4 text-center text-xs text-slate-500">Put this on a screen at the entrance. Nobody needs to staff it.</p>
           </Card>
-          <SiteLocation />
+          {can('settings') && <SiteLocation />}
         </div>
 
         <div className="space-y-6 lg:col-span-3">

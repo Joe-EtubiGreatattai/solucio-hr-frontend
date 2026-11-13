@@ -26,6 +26,7 @@ import Announcements from './pages/admin/Announcements';
 import AdminNotes from './pages/admin/AdminNotes';
 import AnonymousInbox from './pages/admin/AnonymousInbox';
 import CheckInDesk from './pages/admin/CheckInDesk';
+import AdminAccess from './pages/admin/AdminAccess';
 import CheckIn from './pages/staff/CheckIn';
 import Policies from './pages/staff/Policies';
 import PolicyView from './pages/staff/PolicyView';
@@ -78,6 +79,12 @@ function RequireAdmin({ children }) {
   return isAdmin ? children : <Navigate to="/" replace />;
 }
 
+// A page only some access levels can open (lib/access.js); others go back to their home page.
+function RequireArea({ area, children }) {
+  const { can, isAdmin } = useAuth();
+  return can(area) ? children : <Navigate to={isAdmin ? '/admin' : '/'} replace />;
+}
+
 export default function App() {
   return (
     <Routes>
@@ -115,6 +122,7 @@ export default function App() {
         <Route path="relations" element={<MyCases />} />
         <Route path="relations/:id" element={<MyCases />} />
         <Route path="leaving" element={<Leaving />} />
+        <Route path="desk" element={<RequireArea area="checkin"><CheckInDesk /></RequireArea>} />
       </Route>
       <Route element={<RequireAuth><RequireAdmin><AdminLayout /></RequireAdmin></RequireAuth>}>
         <Route path="admin" element={<AdminDashboard />} />
@@ -127,23 +135,24 @@ export default function App() {
         <Route path="admin/requests" element={<AdminRequests />} />
         <Route path="admin/announcements" element={<Announcements />} />
         <Route path="admin/notes" element={<AdminNotes />} />
-        <Route path="admin/anonymous" element={<AnonymousInbox />} />
+        <Route path="admin/anonymous" element={<RequireArea area="cases"><AnonymousInbox /></RequireArea>} />
         <Route path="admin/check-in-desk" element={<CheckInDesk />} />
         <Route path="admin/organisation" element={<Organisation />} />
         <Route path="admin/workforce" element={<WorkforcePlan />} />
         <Route path="admin/policies" element={<AdminPolicies />} />
         <Route path="admin/compliance" element={<Compliance />} />
-        <Route path="admin/audit" element={<AuditTrail />} />
+        <Route path="admin/audit" element={<RequireArea area="audit"><AuditTrail /></RequireArea>} />
+        <Route path="admin/access" element={<RequireArea area="admins"><AdminAccess /></RequireArea>} />
         <Route path="admin/recruitment" element={<Recruitment />} />
         <Route path="admin/recruitment/:id" element={<RecruitmentPipeline />} />
         <Route path="admin/onboarding" element={<AdminOnboarding />} />
         <Route path="admin/training" element={<AdminTraining />} />
         <Route path="admin/performance" element={<AdminPerformance />} />
         <Route path="admin/performance/reviews/:id" element={<ReviewView />} />
-        <Route path="admin/payroll" element={<Payroll />} />
-        <Route path="admin/payroll/runs/:id" element={<PayrollRun />} />
-        <Route path="admin/relations" element={<Relations />} />
-        <Route path="admin/relations/:id" element={<CaseDetail />} />
+        <Route path="admin/payroll" element={<RequireArea area="pay"><Payroll /></RequireArea>} />
+        <Route path="admin/payroll/runs/:id" element={<RequireArea area="pay"><PayrollRun /></RequireArea>} />
+        <Route path="admin/relations" element={<RequireArea area="cases"><Relations /></RequireArea>} />
+        <Route path="admin/relations/:id" element={<RequireArea area="cases"><CaseDetail /></RequireArea>} />
         <Route path="admin/engagement" element={<Engagement />} />
         <Route path="admin/engagement/surveys/:id" element={<SurveyResults />} />
         <Route path="admin/analytics" element={<Analytics />} />

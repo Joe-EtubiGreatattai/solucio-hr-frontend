@@ -6,10 +6,12 @@ import { useConfirm } from './Confirm';
 import { Avatar, Badge, Button, Card, Empty, Spinner } from './ui';
 import { fullName, timeAgo } from '../lib/format';
 import { SWAP_STATUS, shiftText } from '../lib/swaps';
+import { useAuth } from '../context/AuthContext';
 
 // The hospital-wide switch for letting safe swaps through without HR.
 function AutoApproveSetting() {
   const { data, setData } = useFetch('/org/settings', { live: false });
+  const editable = useAuth().can('settings'); // a hospital-wide rule: super admins change it
   if (!data) return null;
   const on = data.autoApproveSwaps !== false;
   const toggle = async () => {
@@ -28,10 +30,11 @@ function AutoApproveSetting() {
           A shift-for-shift swap goes straight through when both people have the same role and department, both hold
           the certificates and licences their role needs, and nobody ends up over the weekly limit or short of rest.
           Covers and anything else still come to you. You're notified either way.
+          {!editable && ' Only a super admin can change this.'}
         </p>
       </div>
-      <button type="button" role="switch" aria-checked={on} aria-label="Approve safe swaps automatically" onClick={toggle}
-        className={`relative h-8 w-14 shrink-0 rounded-full transition-colors ${on ? 'bg-brand-700' : 'bg-slate-300'}`}>
+      <button type="button" role="switch" aria-checked={on} aria-label="Approve safe swaps automatically" onClick={toggle} disabled={!editable}
+        className={`relative h-8 w-14 shrink-0 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${on ? 'bg-brand-700' : 'bg-slate-300'}`}>
         <span className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow transition-all ${on ? 'left-7' : 'left-1'}`} />
       </button>
     </div>

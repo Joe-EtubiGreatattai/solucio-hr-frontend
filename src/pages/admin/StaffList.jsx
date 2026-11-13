@@ -10,9 +10,11 @@ import { fmtDate, ymd } from '../../lib/format';
 import { useConfirm } from '../../components/Confirm';
 import useDebounced from '../../lib/useDebounced';
 import { Term } from '../../components/InfoTip';
+import { useAuth } from '../../context/AuthContext';
+import { ACCESS_LABEL, ACCESS_OPTIONS, accessOf } from '../../lib/access';
 
 const blank = {
-  firstName: '', lastName: '', email: '', password: '', role: 'staff', department: '', jobTitle: '',
+  firstName: '', lastName: '', email: '', password: '', access: 'staff', department: '', jobTitle: '',
   employmentType: 'full_time', phone: '', dateJoined: ymd(), status: 'active', leaveBalance: 21,
   position: '', grade: '', manager: '', probationEndDate: '', contractEndDate: '', plannedExitDate: '',
   payrollAccess: false,
@@ -23,13 +25,16 @@ const dateOf = (v) => (v ? ymd(v) : '');
 
 // Edit form values from a (possibly populated) staff record.
 const toForm = (staff) => ({
-  ...blank, ...staff, password: '',
+  ...blank, ...staff, password: '', access: accessOf(staff),
   position: idOf(staff.position), grade: idOf(staff.grade), manager: idOf(staff.manager),
   dateJoined: dateOf(staff.dateJoined), probationEndDate: dateOf(staff.probationEndDate),
   contractEndDate: dateOf(staff.contractEndDate), plannedExitDate: dateOf(staff.plannedExitDate),
 });
 
 export function StaffFormModal({ open, onClose, staff, onSaved }) {
+  const { can, user: me } = useAuth();
+  const canSetAccess = can('admins') && staff?._id !== me?._id; // super admins, and not for themselves
+  const payOk = can('pay');
   const { data: meta } = useFetch('/users/meta', { initial: { departments: [], jobTitles: [] } });
   const { data: positions } = useFetch('/org/positions', { initial: [] });
   const { data: grades } = useFetch('/org/grades', { initial: [] });
@@ -54,8 +59,10 @@ export function StaffFormModal({ open, onClose, staff, onSaved }) {
     e.preventDefault();
     setBusy(true);
     try {
-      const { password: _password, ...rest } = form;
-      const payload = staff ? rest : form;
+      const { password: _password, role: _role, adminLevel: _level, frontDesk: _desk, ...rest } = form;
+      const payload = { ...(staff ? rest : { ...rest, password: form.password }) };
+      if (!canSetAccess) delete payload.access;
+      if (!payOk) { delete payload.payrollAccess; delete payload.bankDetails; }
       const { data } = staff ? await api.put(`/users/${staff._id}`, payload) : await api.post('/users', payload);
       toast.success(staff ? 'Staff updated' : `Staff created (ID ${data.staffId})`);
       onSaved?.(data);
@@ -106,16 +113,22 @@ export function StaffFormModal({ open, onClose, staff, onSaved }) {
             {['full_time', 'part_time', 'contract', 'locum', 'intern'].map((t) => <option key={t} value={t}>{t.replace('_', ' ')}</option>)}
           </select>
         </Field>
-        <Field label="Role">
-          <select className="input" value={form.role} onChange={set('role')}>
-            <option value="staff">Staff</option><option value="admin">Admin</option>
-          </select>
-        </Field>
-        <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-slate-50 p-3 sm:col-span-2">
+        {canSetAccess ? (
+          <Field label="Access" hint={ACCESS_OPTIONS.find((o) => o.value === form.access)?.hint}>
+            <select className="input" value={form.access} onChange={set('access')}>
+              {ACCESS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </Field>
+        ) : (
+          <Field label="Access" hint={staff?._id === me?._id ? 'Another super admin can change your access.' : 'Only super admins can change access.'}>
+            <input className="input" disabled value={ACCESS_LABEL[form.access] || 'Staff'} />
+          </Field>
+        )}
+        {payOk && <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-slate-50 p-3 sm:col-span-2">
           <input type="checkbox" className="mt-1 h-4 w-4 accent-brand-700" checked={!!form.payrollAccess} onChange={(e) => setForm({ ...form, payrollAccess: e.target.checked })} />
           <span className="text-sm"><span className="font-semibold text-slate-800">Payroll access</span><br />
             <span className="text-slate-500">Can sign in to Solucio Payroll with this account and send salaries, and gets payroll emails. Give it only to the people who run payroll.</span></span>
-        </label>
+        </label>}
         <Field label="Date joined"><input type="date" className="input" value={form.dateJoined} onChange={set('dateJoined')} /></Field>
         <Field label="Status">
           <select className="input" value={form.status} onChange={set('status')}>
@@ -193,7 +206,7 @@ export default function StaffList() {
                     </td>
                     <td className="whitespace-nowrap font-mono text-xs">{s.staffId}</td>
                     <td>{s.department || '—'}</td>
-                    <td>{s.jobTitle || '—'}{s.role === 'admin' && <span className="ml-1"><Badge color="purple">Admin</Badge></span>}{s.payrollAccess && <span className="ml-1"><Badge color="teal">Payroll</Badge></span>}</td>
+                    <td>{s.jobTitle || '—'}{accessOf(s) !== 'staff' && <span className="ml-1"><Badge color="purple">{ACCESS_LABEL[accessOf(s)]}</Badge></span>}{s.payrollAccess && <span className="ml-1"><Badge color="teal">Payroll</Badge></span>}</td>
                     <td>{fmtDate(s.dateJoined)}</td>
                     <td><span className={s.profileCompletion < 60 ? 'text-amber-600' : 'text-slate-600'}>{s.profileCompletion}%</span></td>
                     <td><Badge status={s.status} /></td>

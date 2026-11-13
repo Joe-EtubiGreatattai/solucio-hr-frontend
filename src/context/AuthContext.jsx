@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import { accessOf, canAccess } from '../lib/access';
 import api, { errMsg } from '../lib/api';
 import { Button, Field, Modal, PasswordInput } from '../components/ui';
 
@@ -51,7 +52,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, login, codeLogin, signInWith, logout, loading, isAdmin: user?.role === 'admin' }}>
+    <AuthContext.Provider value={{ user, setUser, login, codeLogin, signInWith, logout, loading, isAdmin: user?.role === 'admin', access: accessOf(user), can: (area) => canAccess(user, area) }}>
       {children}
       <Modal open={expired && !!user} onClose={() => { setExpired(false); logout(); window.location.assign('/login'); }} title="Your session has expired" size="sm" guardChanges={false}
         footer={<><Button variant="secondary" onClick={() => { setExpired(false); logout(); window.location.assign('/login'); }}>Sign out</Button><Button form="reauth-form">Sign in</Button></>}>

@@ -1,7 +1,8 @@
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { apiBase } from './backend';
 
-const api = axios.create({ baseURL: import.meta.env.VITE_API_URL || '/api' });
+const api = axios.create();
 
 // Stable per-browser id, used to spot one phone clocking in several people.
 function deviceId() {
@@ -14,6 +15,8 @@ function deviceId() {
 }
 
 api.interceptors.request.use((config) => {
+  // Resolve the backend per request: demo sessions go to the /demo backend, everyone else to live.
+  config.baseURL = apiBase();
   const token = localStorage.getItem('token');
   if (token && !config.anonymous) {
     config.headers.Authorization = `Bearer ${token}`;

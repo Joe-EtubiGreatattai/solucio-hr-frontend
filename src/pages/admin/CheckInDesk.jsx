@@ -8,6 +8,7 @@ import useFetch from '../../lib/useFetch';
 import { useLive } from '../../context/LiveContext';
 import { playNotificationSound } from '../../lib/sound';
 import { Avatar, Badge, Button, Card, Empty, Field, Modal, PageHeader } from '../../components/ui';
+import { avatarOrigin } from '../../lib/backend';
 import { fmtTime, fullName, timeAgo } from '../../lib/format';
 import { Term } from '../../components/InfoTip';
 
@@ -164,7 +165,7 @@ function Selfie({ request, className = '' }) {
     : <div className={`animate-pulse rounded-xl bg-slate-100 ${className}`} />;
 }
 
-const avatarSrc = (path) => (path?.startsWith('/uploads') ? `${import.meta.env.VITE_API_ORIGIN || ''}${path}` : path);
+const avatarSrc = (path) => (path?.startsWith('/uploads') ? `${avatarOrigin()}${path}` : path);
 
 function ProfilePhoto({ user, className = '' }) {
   return user.avatar ? <img src={avatarSrc(user.avatar)} alt={`Profile photo of ${fullName(user)}`} className={`rounded-xl object-cover ${className}`} />

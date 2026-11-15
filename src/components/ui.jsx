@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useCountUp, useExit } from '../lib/motion';
 import { Loader2, X, Inbox, Eye, EyeOff } from 'lucide-react';
 import { titleCase } from '../lib/format';
+import { avatarOrigin } from '../lib/backend';
 import { Term } from './InfoTip';
 
 export function Button({ variant = 'primary', size = 'md', loading, className = '', children, ...props }) {
@@ -274,7 +275,7 @@ export function Avatar({ user, size = 'md' }) {
   const sizes = { sm: 'h-8 w-8 text-xs', md: 'h-10 w-10 text-sm', lg: 'h-16 w-16 text-xl', xl: 'h-24 w-24 text-3xl' };
   const initials = `${user?.firstName?.[0] || ''}${user?.lastName?.[0] || ''}`.toUpperCase();
   // Photos are stored as server paths (/uploads/...); in production the API is on another domain.
-  const src = user?.avatar?.startsWith('/uploads') ? `${import.meta.env.VITE_API_ORIGIN || ''}${user.avatar}` : user?.avatar;
+  const src = user?.avatar?.startsWith('/uploads') ? `${avatarOrigin()}${user.avatar}` : user?.avatar;
   if (src) return <img src={src} alt="" className={`${sizes[size]} shrink-0 rounded-full object-cover ring-2 ring-white`} />;
   return (
     <div className={`${sizes[size]} flex shrink-0 items-center justify-center rounded-full bg-brand-100 font-bold text-brand-700 ring-2 ring-white`}>

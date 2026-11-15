@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
+import { socketPath } from '../lib/backend';
 
 // Socket.IO connection shared by the whole app.
 // The server sends `sync` {resource} after data changes and `notification` with new notifications.
@@ -14,6 +15,8 @@ export function LiveProvider({ children }) {
   useEffect(() => {
     if (!userId) return;
     const socket = io(import.meta.env.VITE_API_ORIGIN || undefined, {
+      // Demo sessions reach the demo backend's socket under /demo on the same host.
+      path: socketPath(),
       auth: { token: localStorage.getItem('token') },
       transports: ['websocket', 'polling'],
     });

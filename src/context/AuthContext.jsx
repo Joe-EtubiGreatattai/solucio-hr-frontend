@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { accessOf, canAccess } from '../lib/access';
 import api, { errMsg } from '../lib/api';
+import { isDemoLogin, setDemo } from '../lib/backend';
 import { Button, Field, Modal, PasswordInput } from '../components/ui';
 
 const AuthContext = createContext(null);
@@ -23,11 +24,16 @@ export function AuthProvider({ children }) {
     setUser(data.user);
     return data.user;
   };
-  const login = async (email, password) => signInWith((await api.post('/auth/login', { email, password })).data);
+  const login = async (email, password) => {
+    // A demo email routes this session to the seeded /demo backend; any other email to live.
+    setDemo(isDemoLogin(email));
+    return signInWith((await api.post('/auth/login', { email, password })).data);
+  };
   const codeLogin = async (identifier, code) => signInWith((await api.post('/auth/code', { identifier, code }, { anonymous: true })).data);
 
   const logout = () => {
     localStorage.removeItem('token');
+    setDemo(false);
     setUser(null);
   };
 

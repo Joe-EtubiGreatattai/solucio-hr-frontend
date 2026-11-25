@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, MailCheck, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { accessOf } from '../lib/access';
 import { Button, Field, PasswordInput } from '../components/ui';
 import api, { errMsg } from '../lib/api';
 
@@ -14,7 +15,8 @@ export default function Login() {
   const [sentTo, setSentTo] = useState('');
   const navigate = useNavigate();
   const from = useLocation().state?.from;
-  const target = (u) => (from ? `${from.pathname}${from.search}` : u.role === 'admin' ? '/admin' : '/');
+  // A front-desk account is a check-in kiosk — always send it to the kiosk, never a staff deep link.
+  const target = (u) => (accessOf(u) === 'front_desk' ? '/kiosk' : from ? `${from.pathname}${from.search}` : u.role === 'admin' ? '/admin' : '/');
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);

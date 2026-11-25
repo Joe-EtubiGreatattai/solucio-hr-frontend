@@ -1,54 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { QRCodeSVG } from 'qrcode.react';
 import { Check, Crosshair, Expand, ImageOff, MapPin, RefreshCw, UserPlus, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api, { toastError } from '../../lib/api';
 import useFetch from '../../lib/useFetch';
-import { useLive } from '../../context/LiveContext';
 import { playNotificationSound } from '../../lib/sound';
 import { Avatar, Badge, Button, Card, Empty, Field, Modal, PageHeader } from '../../components/ui';
 import { avatarOrigin } from '../../lib/backend';
 import { fmtTime, fullName, timeAgo } from '../../lib/format';
 import { Term } from '../../components/InfoTip';
-
-function DeskQr() {
-  const [state, setState] = useState(null);
-  const [now, setNow] = useState(Date.now());
-  const [resetKey, setResetKey] = useState(0);
-  useLive(['settings'], () => setResetKey((k) => k + 1));
-
-  useEffect(() => {
-    let timer;
-    const load = async () => {
-      try {
-        const { data } = await api.get('/settings/desk-code');
-        setState({ ...data, fetchedAt: Date.now() });
-        timer = setTimeout(load, data.expiresIn * 1000 + 300);
-      } catch {
-        timer = setTimeout(load, 5000);
-      }
-    };
-    load();
-    const tick = setInterval(() => setNow(Date.now()), 1000);
-    return () => { clearTimeout(timer); clearInterval(tick); };
-  }, [resetKey]);
-
-  const remaining = state ? Math.max(0, state.expiresIn - Math.floor((now - state.fetchedAt) / 1000)) : 0;
-  return (
-    <div className="flex flex-col items-center">
-      <div className="rounded-2xl border border-slate-200 bg-white p-4">
-        {state ? <span key={state.code} className="block animate-fade-in"><QRCodeSVG value={`${window.location.origin}/check-in?k=${state.code}`} size={240} level="M" /></span>
-          : <div className="h-60 w-60 animate-pulse rounded bg-slate-100" />}
-      </div>
-      <p key={state?.code} className="mt-4 animate-fade-up font-mono text-4xl font-bold tracking-[0.35em] text-slate-800">{state?.code || '······'}</p>
-      <div className="mt-3 h-1.5 w-60 overflow-hidden rounded-full bg-slate-100">
-        <div className="h-full bg-brand-500 transition-all duration-1000 ease-linear" style={{ width: `${state ? (remaining / state.period) * 100 : 0}%` }} />
-      </div>
-      <p className="mt-1 text-xs text-slate-500">New code in {remaining}s</p>
-    </div>
-  );
-}
+import DeskQr from '../../components/DeskQr';
 
 const RADII = [100, 200, 300, 500, 1000];
 

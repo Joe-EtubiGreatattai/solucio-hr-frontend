@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
+import { accessOf } from './lib/access';
 import StaffLayout from './components/StaffLayout';
 import AdminLayout from './components/AdminLayout';
 import { Spinner } from './components/ui';
@@ -28,6 +29,7 @@ import AnonymousInbox from './pages/admin/AnonymousInbox';
 import CheckInDesk from './pages/admin/CheckInDesk';
 import AdminAccess from './pages/admin/AdminAccess';
 import CheckIn from './pages/staff/CheckIn';
+import Kiosk from './pages/staff/Kiosk';
 import Policies from './pages/staff/Policies';
 import PolicyView from './pages/staff/PolicyView';
 import MyTeam from './pages/staff/MyTeam';
@@ -85,6 +87,12 @@ function RequireArea({ area, children }) {
   return can(area) ? children : <Navigate to={isAdmin ? '/admin' : '/'} replace />;
 }
 
+// A front-desk account is a check-in kiosk: it never opens the staff portal, only the QR screen.
+function RequireStaffPortal({ children }) {
+  const { user } = useAuth();
+  return accessOf(user) === 'front_desk' ? <Navigate to="/kiosk" replace /> : children;
+}
+
 export default function App() {
   return (
     <Routes>
@@ -96,7 +104,8 @@ export default function App() {
         <Route path="status" element={<CareerStatus />} />
         <Route path=":id" element={<CareerJob />} />
       </Route>
-      <Route element={<RequireAuth><StaffLayout /></RequireAuth>}>
+      <Route path="/kiosk" element={<RequireAuth><RequireArea area="checkin"><Kiosk /></RequireArea></RequireAuth>} />
+      <Route element={<RequireAuth><RequireStaffPortal><StaffLayout /></RequireStaffPortal></RequireAuth>}>
         <Route index element={<StaffDashboard />} />
         <Route path="profile" element={<Profile />} />
         <Route path="my-roster" element={<MyRoster />} />

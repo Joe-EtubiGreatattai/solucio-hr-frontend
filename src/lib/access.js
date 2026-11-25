@@ -2,7 +2,7 @@
 // which menus and buttons to show).
 export const ACCESS_OPTIONS = [
   { value: 'staff', label: 'Staff', hint: 'Their own staff portal' },
-  { value: 'front_desk', label: 'Front desk', hint: 'Staff portal, plus the check-in screen: show the QR code, check people in by hand and review face checks' },
+  { value: 'front_desk', label: 'Front desk (check-in kiosk)', hint: 'A shared kiosk login that opens straight to the check-in QR code and shows only that — no staff portal. Use it on the screen at reception.' },
   { value: 'hr_officer', label: 'HR officer', hint: 'Day-to-day HR: staff, rosters, attendance, leave, recruitment, training. No pay, cases, anonymous reports or audit trail' },
   { value: 'hr_manager', label: 'HR manager', hint: 'All HR work, including pay, cases and the audit trail. Cannot manage admins or system settings' },
   { value: 'super_admin', label: 'Super admin', hint: 'Everything, including creating admins and changing system settings' },

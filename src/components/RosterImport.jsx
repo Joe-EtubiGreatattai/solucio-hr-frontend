@@ -3,7 +3,7 @@ import { AlertTriangle, FileUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api, { toastError } from '../lib/api';
 import useFetch from '../lib/useFetch';
-import { matchStaff, readRosterPdf } from '../lib/rosterImport';
+import { matchStaff, readRoster } from '../lib/rosterImport';
 import { ymd } from '../lib/format';
 import { Button, Field, Modal } from './ui';
 
@@ -29,7 +29,7 @@ export default function RosterImport({ open, onClose, roster, presets, onDone })
     reset();
     setReading(true);
     try {
-      const r = await readRosterPdf(file);
+      const r = await readRoster(file);
       setParsed(r);
       const start = new Date(roster.startDate);
       setMonth(`${r.year ?? start.getFullYear()}-${String((r.month ?? start.getMonth()) + 1).padStart(2, '0')}`);
@@ -40,7 +40,7 @@ export default function RosterImport({ open, onClose, roster, presets, onDone })
       }));
       setPeople(matchStaff(r.key, staff, roster.department));
     } catch (e) {
-      setError(e.message || "Couldn't read this PDF");
+      setError(e.message || "Couldn't read this file");
     } finally {
       setReading(false);
     }
@@ -98,21 +98,21 @@ export default function RosterImport({ open, onClose, roster, presets, onDone })
   const setGroup = (i, patch) => setGroups(groups.map((g, j) => (j === i ? { ...g, ...patch } : g)));
 
   return (
-    <Modal open={open} onClose={close} title="Import roster from PDF" size="lg"
+    <Modal open={open} onClose={close} title="Import roster from PDF or Word" size="lg"
       footer={<><Button variant="secondary" onClick={close}>Cancel</Button>
         <Button loading={busy} disabled={!plan.shifts.length || missingHours} onClick={doImport}>Import {plan.shifts.length || ''} shift{plan.shifts.length === 1 ? '' : 's'}</Button></>}>
       <div className="space-y-5">
         <label className="flex cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-slate-300 p-6 text-center hover:border-brand-500 hover:bg-brand-50/40">
           <FileUp className="h-7 w-7 text-brand-700" />
-          <span className="font-semibold">{reading ? 'Reading…' : parsed ? 'Choose a different PDF' : 'Choose the roster PDF'}</span>
-          <span className="text-sm text-slate-500">The typed roster saved as a PDF (or one downloaded from here), laid out with a key like A=Grace, a row per day and MORNING / NIGHT / OFF columns. Scans and photos can't be read.</span>
-          <input type="file" accept="application/pdf,.pdf" className="sr-only" onChange={(e) => { read(e.target.files?.[0]); e.target.value = ''; }} />
+          <span className="font-semibold">{reading ? 'Reading…' : parsed ? 'Choose a different file' : 'Choose the roster file'}</span>
+          <span className="text-sm text-slate-500">A typed roster as a Word (.docx) or PDF file (or one downloaded from here), laid out with a key like A=Grace, a row per day and MORNING / NIGHT / OFF columns. Scans and photos can't be read.</span>
+          <input type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf,.pdf" className="sr-only" onChange={(e) => { read(e.target.files?.[0]); e.target.value = ''; }} />
         </label>
         {error && <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
 
         {parsed && (
           <>
-            <Field label="Month these dates are in" hint={`Found ${parsed.rows.length} days in the PDF. This roster runs ${ymd(roster.startDate)} to ${ymd(roster.endDate)}.`}>
+            <Field label="Month these dates are in" hint={`Found ${parsed.rows.length} days in the file. This roster runs ${ymd(roster.startDate)} to ${ymd(roster.endDate)}.`}>
               <input type="month" className="input max-w-52" value={month} onChange={(e) => setMonth(e.target.value)} />
             </Field>
 

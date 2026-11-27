@@ -202,3 +202,12 @@ export function matchStaff(key, staff, department) {
     return { ...k, user: found.length === 1 ? found[0]._id : '', candidates: found.length };
   });
 }
+
+// Read a roster from either a PDF (above) or a Word .docx with the same layout, picking by file type.
+// The .docx reader is loaded on demand so PDF-only imports don't carry it.
+export async function readRoster(file) {
+  const name = (file?.name || '').toLowerCase();
+  const isDocx = name.endsWith('.docx') || file?.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  if (isDocx) { const { readRosterDocx } = await import('./rosterDocx'); return readRosterDocx(file); }
+  return readRosterPdf(file);
+}

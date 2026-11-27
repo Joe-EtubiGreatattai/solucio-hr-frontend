@@ -208,7 +208,7 @@ export default function RosterDetail() {
         title={<span className="flex items-center gap-3">{roster.title} <Badge status={roster.status} /></span>}
         subtitle={`${fmtDate(roster.startDate)} – ${fmtDate(roster.endDate)} · ${roster.department || 'All departments'} · ${shifts.length} shifts, ${rows.length} staff`}
         actions={<>
-          <Button variant="secondary" onClick={() => setImportOpen(true)}><FileUp className="h-4 w-4" /> Import PDF</Button>
+          <Button variant="secondary" onClick={() => setImportOpen(true)}><FileUp className="h-4 w-4" /> Import</Button>
           <Button variant="secondary" disabled={!shifts.length} onClick={() => setLettersOpen(true)}><CaseSensitive className="h-4 w-4" /> Letters</Button>
           <Button variant="secondary" loading={printing} disabled={!shifts.length} onClick={downloadPdf}><FileDown className="h-4 w-4" /> Download PDF</Button>
           <Button variant="secondary" onClick={() => setAssign({})}><Plus className="h-4 w-4" /> Assign shifts</Button>

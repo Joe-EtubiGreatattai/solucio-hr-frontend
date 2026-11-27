@@ -6,14 +6,14 @@ import useFetch from '../lib/useFetch';
 import { Button, Field, IconButton, Modal } from './ui';
 import { titleCase } from '../lib/format';
 
-const SHIFTS = ['morning', 'afternoon', 'night', 'day', 'on_call', 'custom'];
+const SHIFTS = ['morning', 'evening', 'custom'];
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 // Minimum safe staffing per department and shift. Rosters and the dashboard flag anything below it.
 export default function StaffingRules({ onClose }) {
   const { data: rules, reload } = useFetch('/rosters/staffing-rules', { initial: [] });
   const { data: meta } = useFetch('/users/meta', { initial: { departments: [] }, live: false });
-  const blank = { department: '', shiftType: 'night', minStaff: 2, days: [], note: '' };
+  const blank = { department: '', shiftType: 'morning', minStaff: 2, days: [], note: '' };
   const [f, setF] = useState(blank);
   const add = async (e) => {
     e.preventDefault();

@@ -7,7 +7,7 @@ import { matchStaff, readRoster } from '../lib/rosterImport';
 import { ymd } from '../lib/format';
 import { Button, Field, Modal } from './ui';
 
-const SHIFT_TYPES = { morning: 'Morning', afternoon: 'Afternoon', night: 'Night', day: 'Day (12h)', on_call: 'On call', custom: 'Other hours' };
+const SHIFT_TYPES = { morning: 'Morning', evening: 'Evening', custom: 'Other hours' };
 
 // Upload a roster PDF in the printed layout, check what was read, then create the shifts.
 export default function RosterImport({ open, onClose, roster, presets, onDone }) {
@@ -35,7 +35,10 @@ export default function RosterImport({ open, onClose, roster, presets, onDone })
       setMonth(`${r.year ?? start.getFullYear()}-${String((r.month ?? start.getMonth()) + 1).padStart(2, '0')}`);
       setGroups(r.groups.map((g) => {
         const type = g.type === 'off' ? 'off' : g.type;
-        return { ...g, include: g.type !== 'off', shiftType: type === 'off' ? '' : type,
+        // Only Morning and Evening are offered now; any other parsed column (e.g. a Night column)
+        // comes in as "Other hours" keeping the times read from the file, so nothing is lost.
+        const shiftType = type === 'off' ? '' : (SHIFT_TYPES[type] ? type : 'custom');
+        return { ...g, include: g.type !== 'off', shiftType,
           start: g.start || presets[type]?.start || '', end: g.end || presets[type]?.end || '' };
       }));
       setPeople(matchStaff(r.key, staff, roster.department));

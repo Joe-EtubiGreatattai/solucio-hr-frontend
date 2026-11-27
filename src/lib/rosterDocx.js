@@ -9,7 +9,7 @@
 
 const MONTHS = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
 const WEEKDAY = /^(mon|tue|wed|thu|fri|sat|sun)[a-z]*\.?$/i;
-const GROUP_WORDS = { MORNING: 'morning', AFTERNOON: 'afternoon', EVENING: 'afternoon', NIGHT: 'night', DAY: 'day', 'ON CALL': 'on_call', OFF: 'off' };
+const GROUP_WORDS = { MORNING: 'morning', AFTERNOON: 'afternoon', EVENING: 'evening', NIGHT: 'night', DAY: 'day', 'ON CALL': 'on_call', OFF: 'off' };
 const HOURS = /(\d{1,2})(?:[.:](\d{2}))?\s*(AM|PM)\s*(?:TO|-|–|—)\s*(\d{1,2})(?:[.:](\d{2}))?\s*(AM|PM)/i;
 
 const to24 = (h, m, ap) => `${String((Number(h) % 12) + (ap.toUpperCase() === 'PM' ? 12 : 0)).padStart(2, '0')}:${m || '00'}`;

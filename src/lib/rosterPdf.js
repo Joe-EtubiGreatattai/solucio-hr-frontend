@@ -4,12 +4,13 @@ import { ymd } from './format';
 
 // Colours of the paper version: blue mornings, beige nights, green off-duty.
 const FILL = {
-  morning: [221, 233, 241], afternoon: [250, 229, 211], day: [252, 243, 207], night: [239, 233, 214],
+  morning: [221, 233, 241], evening: [250, 229, 211], afternoon: [250, 229, 211], day: [252, 243, 207], night: [239, 233, 214],
   on_call: [233, 226, 245], custom: [226, 232, 240], off: [227, 237, 205],
 };
 const LEAVE = [253, 224, 71];
-const ORDER = ['morning', 'day', 'afternoon', 'night', 'on_call'];
-const LABEL = { morning: 'MORNING', afternoon: 'AFTERNOON', day: 'DAY', night: 'NIGHT', on_call: 'ON CALL' };
+// Morning and Evening are the active shifts; the rest stay for any older rosters still on file.
+const ORDER = ['morning', 'evening', 'day', 'afternoon', 'night', 'on_call'];
+const LABEL = { morning: 'MORNING', evening: 'EVENING', afternoon: 'AFTERNOON', day: 'DAY', night: 'NIGHT', on_call: 'ON CALL' };
 const MAX_SPLIT = 8; // more people than this in a group share one wide column
 
 // "07:30" -> "7.30 AM", "17:00" -> "5 PM"

@@ -156,7 +156,7 @@ function Checklist({ tasks, title = 'Getting set up', link }) {
 
 // Week calendar: shifts drawn as blocks on a 24-hour scale; night shifts continue into the next day.
 const SHIFT_BLOCK = {
-  morning: 'bg-sky-100 text-sky-900 border-sky-200', afternoon: 'bg-amber-100 text-amber-900 border-amber-200',
+  morning: 'bg-sky-100 text-sky-900 border-sky-200', evening: 'bg-amber-100 text-amber-900 border-amber-200', afternoon: 'bg-amber-100 text-amber-900 border-amber-200',
   night: 'bg-brand-800 text-white border-brand-900', day: 'bg-emerald-100 text-emerald-900 border-emerald-200',
   on_call: 'bg-rose-100 text-rose-900 border-rose-200', custom: 'bg-slate-100 text-slate-800 border-slate-200',
 };

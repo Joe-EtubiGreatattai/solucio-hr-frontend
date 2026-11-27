@@ -17,7 +17,7 @@ const blank = {
   firstName: '', lastName: '', email: '', password: '', access: 'staff', department: '', jobTitle: '',
   employmentType: 'full_time', phone: '', dateJoined: ymd(), status: 'active', leaveBalance: 21,
   position: '', grade: '', manager: '', probationEndDate: '', contractEndDate: '', plannedExitDate: '',
-  payrollAccess: false, emrRoles: [],
+  payrollAccess: false, emrRoles: [], rosterAliases: '',
 };
 
 const EMR_ROLES = [['reception', 'Reception'], ['nurse', 'Nurse'], ['doctor', 'Doctor'], ['lab', 'Lab'], ['pharmacy', 'Pharmacy'], ['cashier', 'Cashier'], ['billing', 'Billing officer'], ['admin', 'EMR admin']];
@@ -31,6 +31,7 @@ const toForm = (staff) => ({
   position: idOf(staff.position), grade: idOf(staff.grade), manager: idOf(staff.manager),
   dateJoined: dateOf(staff.dateJoined), probationEndDate: dateOf(staff.probationEndDate),
   contractEndDate: dateOf(staff.contractEndDate), plannedExitDate: dateOf(staff.plannedExitDate),
+  rosterAliases: (staff.rosterAliases || []).join(', '),
 });
 
 export function StaffFormModal({ open, onClose, staff, onSaved }) {
@@ -63,6 +64,7 @@ export function StaffFormModal({ open, onClose, staff, onSaved }) {
     try {
       const { password: _password, role: _role, adminLevel: _level, frontDesk: _desk, ...rest } = form;
       const payload = { ...(staff ? rest : { ...rest, password: form.password }) };
+      if (typeof payload.rosterAliases === 'string') payload.rosterAliases = payload.rosterAliases.split(',').map((s) => s.trim()).filter(Boolean);
       if (!canSetAccess) delete payload.access;
       if (!payOk) { delete payload.payrollAccess; delete payload.bankDetails; }
       const { data } = staff ? await api.put(`/users/${staff._id}`, payload) : await api.post('/users', payload);
@@ -98,6 +100,9 @@ export function StaffFormModal({ open, onClose, staff, onSaved }) {
         <Field label="Job title / category">
           <input className="input" list="jobtitles" value={form.jobTitle} disabled={!!form.position} onChange={set('jobTitle')} />
           <datalist id="jobtitles">{meta.jobTitles.map((d) => <option key={d} value={d} />)}</datalist>
+        </Field>
+        <Field label="Roster names" hint="Names this person appears under on imported duty rosters (e.g. a first name or nickname). Separate several with commas.">
+          <input className="input" value={form.rosterAliases} onChange={set('rosterAliases')} placeholder="e.g. Grace, Gracie" />
         </Field>
         <Field label="Grade">
           <select className="input" value={form.grade} onChange={set('grade')}>

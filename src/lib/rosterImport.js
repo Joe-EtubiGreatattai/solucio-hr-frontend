@@ -190,11 +190,16 @@ export async function readRosterPdf(file) {
 
 // Match key names ("Grace", "Favour N.") to staff in the directory.
 export function matchStaff(key, staff, department) {
-  const norm = (s) => s.toLowerCase().replace(/[^a-z]/g, '');
+  const norm = (s) => (s || '').toLowerCase().replace(/[^a-z]/g, '');
   return key.map((k) => {
+    const full = norm(k.name);
     const [first, initial] = k.name.split(/\s+/);
-    let found = staff.filter((p) => norm(p.firstName.split(/\s+/)[0]) === norm(first) || norm(p.firstName) === norm(first));
-    if (initial) found = found.filter((p) => norm(p.lastName).startsWith(norm(initial)));
+    // A saved roster alias is an explicit, remembered match and wins outright.
+    let found = staff.filter((p) => (p.rosterAliases || []).some((a) => { const n = norm(a); return n && (n === full || n === norm(first)); }));
+    if (!found.length) {
+      found = staff.filter((p) => norm(p.firstName.split(/\s+/)[0]) === norm(first) || norm(p.firstName) === norm(first));
+      if (initial) found = found.filter((p) => norm(p.lastName).startsWith(norm(initial)));
+    }
     if (found.length > 1 && department) {
       const inDept = found.filter((p) => p.department === department);
       if (inDept.length) found = inDept;

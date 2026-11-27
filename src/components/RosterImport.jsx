@@ -19,9 +19,10 @@ export default function RosterImport({ open, onClose, roster, presets, onDone })
   const [groups, setGroups] = useState([]);
   const [people, setPeople] = useState([]); // [{ letter, name, user }]
   const [replace, setReplace] = useState(false);
+  const [remember, setRemember] = useState(true);
   const [busy, setBusy] = useState(false);
 
-  const reset = () => { setParsed(null); setError(''); setGroups([]); setPeople([]); setReplace(false); };
+  const reset = () => { setParsed(null); setError(''); setGroups([]); setPeople([]); setReplace(false); setRemember(true); };
   const close = () => { reset(); onClose(); };
 
   const read = async (file) => {
@@ -81,6 +82,18 @@ export default function RosterImport({ open, onClose, roster, presets, onDone })
   }, [parsed, month, people, groups, roster]);
 
   const missingHours = groups.some((g) => g.include && g.type !== 'off' && (!g.start || !g.end));
+
+  // People matched by hand whose roster name the system wouldn't recognise next time — offer to remember.
+  const toRemember = useMemo(() => {
+    const norm = (s) => (s || '').toLowerCase().replace(/[^a-z]/g, '');
+    return people.filter((p) => p.user).map((p) => {
+      const s = staff.find((x) => x._id === p.user);
+      if (!s) return null;
+      const known = norm(s.firstName) === norm(p.name) || (s.rosterAliases || []).some((a) => norm(a) === norm(p.name));
+      return known ? null : { user: p.user, name: p.name };
+    }).filter(Boolean);
+  }, [people, staff]);
+
   const doImport = async () => {
     setBusy(true);
     try {
@@ -88,6 +101,10 @@ export default function RosterImport({ open, onClose, roster, presets, onDone })
         shifts: plan.shifts, replace,
         letters: people.filter((p) => p.user).map((p) => ({ user: p.user, letter: p.letter })),
       });
+      // Teach the system these names so the next import recognises the same people automatically.
+      if (remember && toRemember.length) {
+        await Promise.allSettled(toRemember.map((r) => api.post(`/users/${r.user}/roster-alias`, { name: r.name })));
+      }
       toast.success(`${data.created} shift${data.created === 1 ? '' : 's'} imported${data.removed ? `, ${data.removed} replaced` : ''}`);
       if (data.skipped.length) {
         const reasons = [...new Set(data.skipped.map((s) => s.reason))].slice(0, 2).join('; ');
@@ -160,6 +177,13 @@ export default function RosterImport({ open, onClose, roster, presets, onDone })
                 ))}
               </div>
             </div>
+
+            {toRemember.length > 0 && (
+              <label className="flex items-start gap-3 text-sm">
+                <input type="checkbox" className="mt-0.5 h-4 w-4 accent-brand-700" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+                <span><b>Remember {toRemember.length === 1 ? 'this name' : 'these names'} for next time</b><br /><span className="text-slate-500">Save {toRemember.map((r) => `“${r.name}”`).join(', ')} so future roster imports recognise the same {toRemember.length === 1 ? 'person' : 'people'} automatically.</span></span>
+              </label>
+            )}
 
             <label className="flex items-start gap-3 text-sm">
               <input type="checkbox" className="mt-0.5 h-4 w-4 accent-brand-700" checked={replace} onChange={(e) => setReplace(e.target.checked)} />

@@ -34,12 +34,15 @@ export default function RosterImport({ open, onClose, roster, presets, onDone })
       setParsed(r);
       const start = new Date(roster.startDate);
       setMonth(`${r.year ?? start.getFullYear()}-${String((r.month ?? start.getMonth()) + 1).padStart(2, '0')}`);
-      setGroups(r.groups.map((g) => {
+      // Which columns actually have anyone assigned across the month.
+      const used = r.groups.map((_, gi) => r.rows.some((row) => (row.byGroup[gi] || []).length > 0));
+      setGroups(r.groups.map((g, gi) => {
         const type = g.type === 'off' ? 'off' : g.type;
         // Only Morning and Evening are offered now; any other parsed column (e.g. a Night column)
         // comes in as "Other hours" keeping the times read from the file, so nothing is lost.
         const shiftType = type === 'off' ? '' : (SHIFT_TYPES[type] ? type : 'custom');
-        return { ...g, include: g.type !== 'off', shiftType,
+        // Off, and any empty column (nobody in it, like an unused Afternoon), start unchecked.
+        return { ...g, include: g.type !== 'off' && used[gi], hasPeople: used[gi], shiftType,
           start: g.start || presets[type]?.start || '', end: g.end || presets[type]?.end || '' };
       }));
       setPeople(matchStaff(r.key, staff, roster.department));
@@ -82,6 +85,18 @@ export default function RosterImport({ open, onClose, roster, presets, onDone })
   }, [parsed, month, people, groups, roster]);
 
   const missingHours = groups.some((g) => g.include && g.type !== 'off' && (!g.start || !g.end));
+
+  // Does the month we're importing actually fall within this roster's own dates?
+  const period = useMemo(() => {
+    if (!parsed || !month) return { overlaps: true, label: '' };
+    const [y, m] = month.split('-').map(Number);
+    const monthLo = `${month}-01`;
+    const monthHi = `${month}-${String(new Date(y, m, 0).getDate()).padStart(2, '0')}`;
+    const lo = ymd(roster.startDate);
+    const hi = ymd(roster.endDate);
+    const label = new Date(`${month}-01T12:00:00`).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    return { overlaps: monthLo <= hi && monthHi >= lo, label, lo, hi };
+  }, [parsed, month, roster]);
 
   // People matched by hand whose roster name the system wouldn't recognise next time — offer to remember.
   const toRemember = useMemo(() => {
@@ -145,7 +160,9 @@ export default function RosterImport({ open, onClose, roster, presets, onDone })
                       <input type="checkbox" className="h-4 w-4 accent-brand-700" disabled={g.type === 'off'} checked={g.include} onChange={(e) => setGroup(i, { include: e.target.checked })} />
                       {g.label}
                     </label>
-                    {g.type === 'off' ? <span className="text-sm text-slate-500">Days off aren't shifts, so they're not imported.</span> : (
+                    {g.type === 'off' ? <span className="text-sm text-slate-500">Days off aren't shifts, so they're not imported.</span> : !g.hasPeople ? (
+                      <span className="text-sm text-slate-500">No one is in this column in the file.</span>
+                    ) : (
                       <>
                         <select className="input w-auto" aria-label={`${g.label} shift type`} value={g.shiftType}
                           onChange={(e) => setGroup(i, { shiftType: e.target.value, ...(g.start ? {} : { start: presets[e.target.value]?.start || '', end: presets[e.target.value]?.end || '' }) })}>
@@ -190,11 +207,18 @@ export default function RosterImport({ open, onClose, roster, presets, onDone })
               <span><b>Replace shifts already on these dates</b><br /><span className="text-slate-500">Removes this roster's existing shifts on the imported days first. Leave it off to add to what's there.</span></span>
             </label>
 
+            {!period.overlaps && (
+              <div className="flex items-start gap-2 rounded-xl bg-rose-50 p-3 text-sm text-rose-800">
+                <AlertTriangle className="mt-0.5 h-4 w-4 flex-none" />
+                <span>This file is <b>{period.label}</b>, but this roster covers <b>{period.lo}</b> to <b>{period.hi}</b> — they don't overlap, so nothing will import. Open the {period.label} roster instead, or change <b>“Month these dates are in”</b> above to a month inside this roster.</span>
+              </div>
+            )}
+
             <div className="rounded-xl bg-brand-50 p-3 text-sm text-brand-900">
               <b>{plan.shifts.length} shifts</b> will be created.
               {plan.unmatched > 0 && <span className="mt-1 flex items-center gap-1 text-amber-800"><AlertTriangle className="h-4 w-4" />{plan.unmatched} skipped: their letter isn't matched to anyone yet.</span>}
-              {plan.outside > 0 && <span className="mt-1 flex items-center gap-1 text-amber-800"><AlertTriangle className="h-4 w-4" />{plan.outside} skipped: outside this roster's dates. Check the month above.</span>}
-              {missingHours && <span className="mt-1 flex items-center gap-1 text-amber-800"><AlertTriangle className="h-4 w-4" />Set the hours for each shift column.</span>}
+              {plan.outside > 0 && <span className="mt-1 flex items-center gap-1 text-amber-800"><AlertTriangle className="h-4 w-4" />{plan.outside} skipped: outside this roster's dates ({period.lo} to {period.hi}).</span>}
+              {missingHours && <span className="mt-1 flex items-center gap-1 text-amber-800"><AlertTriangle className="h-4 w-4" />Set the hours for each shift column that has people.</span>}
             </div>
           </>
         )}
